@@ -1,3 +1,4 @@
 temp/
-notebook/.ipynb_checkpoints
-notebook/notebook_env
+.ipynb_checkpoints/
+env/
+cmd.txt

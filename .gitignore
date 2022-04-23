@@ -1,4 +1,5 @@
 temp/
+test_vids/
 .ipynb_checkpoints/
 env/
 cmd.txt

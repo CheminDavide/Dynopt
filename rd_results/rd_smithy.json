@@ -1,7 +1,58 @@
-{
-    "file_name": "smithy.yuv"
-    "results": [ {
-        "day": 1,
-        },
-    ]
-}
+[
+    {
+        "video_content": "smithy",
+        "file_name": "smithyAVC_640_cf1.mp4",
+        "codec": "h264",
+        "width": 640,
+        "height": 360,
+        "framerate": 50,
+        "cbr": 1,
+        "bitrate": 11977376,
+        "vmaf": 15.121267,
+        "psnr": 30.106878625,
+        "ssim": 0.978313,
+        "ms_ssim": 0.831118
+    },
+    {
+        "video_content": "smithy",
+        "file_name": "smithyAVC_640_cf11.mp4",
+        "codec": "h264",
+        "width": 640,
+        "height": 360,
+        "framerate": 50,
+        "cbr": 11,
+        "bitrate": 3220577,
+        "vmaf": 14.410564,
+        "psnr": 30.0269065,
+        "ssim": 0.97713,
+        "ms_ssim": 0.829422
+    },
+    {
+        "video_content": "smithy",
+        "file_name": "smithyAVC_640_cf23.mp4",
+        "codec": "h264",
+        "width": 640,
+        "height": 360,
+        "framerate": 50,
+        "cbr": 23,
+        "bitrate": 691320,
+        "vmaf": 9.305,
+        "psnr": 29.62932,
+        "ssim": 0.963452,
+        "ms_ssim": 0.81116
+    },
+    {
+        "video_content": "smithy",
+        "file_name": "smithyAVC_640_cf34.mp4",
+        "codec": "h264",
+        "width": 640,
+        "height": 360,
+        "framerate": 50,
+        "cbr": 34,
+        "bitrate": 76122,
+        "vmaf": 0.044292,
+        "psnr": 28.385157875,
+        "ssim": 0.870021,
+        "ms_ssim": 0.712765
+    }
+]

@@ -1,0 +1,7 @@
+avc			hevc			vp9		
+cfr	psnr	vmaf	cfr	psnr	vmaf	cfr	psnr	vmaf
+10			15			15		
+17			22			20		
+23			28			25		
+29			34			30		
+35			40			35		

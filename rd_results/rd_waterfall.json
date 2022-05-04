@@ -1,0 +1,122 @@
+[
+    {
+        "video_content": "waterfall",
+        "file_name": "waterfallAVC_cf17.mp4",
+        "codec": "h264",
+        "width": 3840,
+        "height": 2160,
+        "framerate": 50,
+        "cfr": 17,
+        "bitrate": 182180722,
+        "vmaf": 99.938809,
+        "psnr": 42.751968999999995
+    },
+    {
+        "video_content": "waterfall",
+        "file_name": "waterfallAVC_cf10.mp4",
+        "codec": "h264",
+        "width": 3840,
+        "height": 2160,
+        "framerate": 50,
+        "cfr": 10,
+        "bitrate": 387634755,
+        "vmaf": 99.997133,
+        "psnr": 47.079949250000006
+    },
+    {
+        "video_content": "waterfall",
+        "file_name": "waterfallAVC_cf20.mp4",
+        "codec": "h264",
+        "width": 3840,
+        "height": 2160,
+        "framerate": 50,
+        "cfr": 20,
+        "bitrate": 129079047,
+        "vmaf": 96.701726,
+        "psnr": 40.948324375
+    },
+    {
+        "video_content": "waterfall",
+        "file_name": "waterfallAVC_cf32.mp4",
+        "codec": "h264",
+        "width": 3840,
+        "height": 2160,
+        "framerate": 50,
+        "cfr": 32,
+        "bitrate": 23547068,
+        "vmaf": 56.491833,
+        "psnr": 34.233047875000004
+    },
+    {
+        "video_content": "waterfall",
+        "file_name": "waterfallAVC_cf35.mp4",
+        "codec": "h264",
+        "width": 3840,
+        "height": 2160,
+        "framerate": 50,
+        "cfr": 35,
+        "bitrate": 14417017,
+        "vmaf": 41.473261,
+        "psnr": 32.804486
+    },
+    {
+        "video_content": "waterfall",
+        "file_name": "waterfallAVC_cf26.mp4",
+        "codec": "h264",
+        "width": 3840,
+        "height": 2160,
+        "framerate": 50,
+        "cfr": 26,
+        "bitrate": 59343433,
+        "vmaf": 82.348099,
+        "psnr": 37.440695500000004
+    },
+    {
+        "video_content": "waterfall",
+        "file_name": "waterfallAVC_cf40.mp4",
+        "codec": "h264",
+        "width": 3840,
+        "height": 2160,
+        "framerate": 50,
+        "cfr": 40,
+        "bitrate": 6328534,
+        "vmaf": 20.550115,
+        "psnr": 30.597475375
+    },
+    {
+        "video_content": "waterfall",
+        "file_name": "waterfallAVC_cf14.mp4",
+        "codec": "h264",
+        "width": 3840,
+        "height": 2160,
+        "framerate": 50,
+        "cfr": 14,
+        "bitrate": 252754305,
+        "vmaf": 99.996083,
+        "psnr": 44.547536375
+    },
+    {
+        "video_content": "waterfall",
+        "file_name": "waterfallAVC_cf23.mp4",
+        "codec": "h264",
+        "width": 3840,
+        "height": 2160,
+        "framerate": 50,
+        "cfr": 23,
+        "bitrate": 89084734,
+        "vmaf": 90.881262,
+        "psnr": 39.182744625
+    },
+    {
+        "video_content": "waterfall",
+        "file_name": "waterfallAVC_cf29.mp4",
+        "codec": "h264",
+        "width": 3840,
+        "height": 2160,
+        "framerate": 50,
+        "cfr": 29,
+        "bitrate": 38050890,
+        "vmaf": 70.68673,
+        "psnr": 35.776621250000005
+    }
+]

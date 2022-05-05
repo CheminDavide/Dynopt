@@ -90,7 +90,7 @@
         "width": 3840,
         "height": 2160,
         "framerate": 50,
-        "cfr": 20,
+        "crf": 20,
         "bitrate": 179099823,
         "vmaf": 98.554214,
         "psnr": 45.99438575
@@ -102,7 +102,7 @@
         "width": 3840,
         "height": 2160,
         "framerate": 50,
-        "cfr": 28,
+        "crf": 28,
         "bitrate": 33291461,
         "vmaf": 76.130322,
         "psnr": 38.422196625
@@ -114,7 +114,7 @@
         "width": 3840,
         "height": 2160,
         "framerate": 50,
-        "cfr": 34,
+        "crf": 34,
         "bitrate": 13687865,
         "vmaf": 55.146474,
         "psnr": 35.45426825
@@ -126,7 +126,7 @@
         "width": 3840,
         "height": 2160,
         "framerate": 50,
-        "cfr": 15,
+        "crf": 15,
         "bitrate": 147758394,
         "vmaf": 97.253483,
         "psnr": 45.387485375
@@ -138,7 +138,7 @@
         "width": 3840,
         "height": 2160,
         "framerate": 50,
-        "cfr": 10,
+        "crf": 10,
         "bitrate": 272633946,
         "vmaf": 99.990075,
         "psnr": 47.838369500000006
@@ -150,7 +150,7 @@
         "width": 3840,
         "height": 2160,
         "framerate": 50,
-        "cfr": 22,
+        "crf": 22,
         "bitrate": 69415444,
         "vmaf": 89.483418,
         "psnr": 41.54366687500001
@@ -162,7 +162,7 @@
         "width": 3840,
         "height": 2160,
         "framerate": 50,
-        "cfr": 15,
+        "crf": 15,
         "bitrate": 222650468,
         "vmaf": 99.525337,
         "psnr": 47.28550737500001
@@ -174,7 +174,7 @@
         "width": 3840,
         "height": 2160,
         "framerate": 50,
-        "cfr": 30,
+        "crf": 30,
         "bitrate": 111728607,
         "vmaf": 94.860096,
         "psnr": 43.326143125

@@ -1,4 +1,4 @@
-content,file,codec,width,height,fps,cfr,bitrate,vmaf,psnr
+content,file,codec,width,height,fps,crf,bitrate,vmaf,psnr
 smithy,smithyHEVC_cf22.mp4,hevc,3840,2160,50,22,32872591,90.951493,41.91337312500001
 smithy,smithyAVC_cf10.mp4,h264,3840,2160,50,10,165744791,96.354193,48.400402125
 smithy,smithyHEVC_cf28.mp4,hevc,3840,2160,50,28,14223115,83.534398,38.680340125

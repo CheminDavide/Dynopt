@@ -1,4 +1,4 @@
-content,file,codec,width,height,fps,cfr,bitrate,vmaf,psnr
+content,file,codec,width,height,fps,crf,bitrate,vmaf,psnr
 midnight,midnightHEVC_cf40.mp4,hevc,3840,2160,50,40,3996354,22.55413,31.690794750000002
 midnight,midnightAVC_cf35.mp4,h264,3840,2160,50,35,12186525,39.520372,33.1882405
 midnight,midnightVP9_cf35.webm,vp9,3840,2160,50,35,82033257,91.589947,41.551283375

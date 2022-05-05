@@ -1,4 +1,4 @@
-content,file,codec,width,height,fps,cfr,bitrate,vmaf,psnr
+content,file,codec,width,height,fps,crf,bitrate,vmaf,psnr
 waterfall,waterfallAVC_cf17.mp4,h264,3840,2160,50,17,182180722,99.938809,42.751968999999995
 waterfall,waterfallAVC_cf10.mp4,h264,3840,2160,50,10,387634755,99.997133,47.079949250000006
 waterfall,waterfallAVC_cf20.mp4,h264,3840,2160,50,20,129079047,96.701726,40.948324375

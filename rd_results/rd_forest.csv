@@ -1,4 +1,4 @@
-content,file,codec,width,height,fps,cfr,bitrate,vmaf,psnr
+content,file,codec,width,height,fps,crf,bitrate,vmaf,psnr
 forest,forestAVC_cf35.mp4,h264,3840,2160,50,35,11862603,46.096353,33.78967225
 forest,forestAVC_cf23.mp4,h264,3840,2160,50,23,63034619,86.866816,40.31668275
 forest,forestAVC_cf17.mp4,h264,3840,2160,50,17,128406476,96.134589,43.768838124999995

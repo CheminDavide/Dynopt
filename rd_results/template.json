@@ -1,0 +1,17 @@
+[
+    {
+        "video_content": "",
+        "file_name": "",
+        "codec": "",
+        "width": 0,
+        "height": 0,
+        "framerate": 0,
+        "shots": [
+            "index": 0,
+            "crf": 0,
+            "bitrate": 0,
+            "vmaf": 0,
+            "psnr": 0
+            ]
+    }
+]

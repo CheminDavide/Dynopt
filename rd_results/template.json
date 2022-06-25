@@ -9,8 +9,8 @@
                "shots": [
                     {
                          "index": 0,
-                         "vals": [],
-                         "opt": [
+                         "assessment": [],
+                         "opt_points": [
                              {
                                  "target": 0,
                                  "crf": 0

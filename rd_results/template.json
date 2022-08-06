@@ -1,23 +1,26 @@
 {
-     "content": "",
-     "versions": [
-          {
-               "codec": "",
-               "width": 0,
-               "height": 0,
-               "fps": 0,
-               "shots": [
-                    {
-                         "index": 0,
-                         "assessment": [],
-                         "opt_points": [
-                             {
-                                 "target": 0,
-                                 "crf": 0
-                             }
-                         ]
-                    }
-               ]
-          }
-     ]
+    "content": "",
+    "codec": "",
+    "width": 0,
+    "height": 0,
+    "fps": 0,
+    "shots": [
+        {
+            "index": 0,
+            "duration": 0.0,
+            "slope_rh": 0.0,
+            "slope_lh": 0.0,
+            "range": [0,0],
+            "current_point": 0,
+            "new_point": 0,
+            "assessment": [],
+            "opt_points": [
+                {
+                    "metric": "",
+                    "target": 0,
+                    "crf": 0
+                }
+            ]
+        }
+    ]
 }

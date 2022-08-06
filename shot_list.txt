@@ -1,1 +1,4 @@
-file 'test_vids/temp_encoded/0/22_AVC.mp4' 
+file 'test_vids/temp_encoded/0/36_AVC.mp4' 
+file 'test_vids/temp_encoded/1/36_AVC.mp4' 
+file 'test_vids/temp_encoded/2/36_AVC.mp4' 
+file 'test_vids/temp_encoded/3/36_AVC.mp4' 

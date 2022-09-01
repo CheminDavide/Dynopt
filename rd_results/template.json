@@ -8,11 +8,6 @@
         {
             "index": 0,
             "duration": 0.0,
-            "slope_rh": 0.0,
-            "slope_lh": 0.0,
-            "range": [0,0],
-            "current_point": 0,
-            "new_point": 0,
             "assessment": [],
             "opt_points": [
                 {

@@ -143,7 +143,7 @@ def search_opt(t_name, t_val, sx_end, dx_end, i_sx_end, i_dx_end):
         i = i_sx_end - 1
         while n == 0 and i>= 0:
         #the first point you find is the new lower end of the range
-            if not res_matrix[t_name][i] == 0:
+            if not res_matrix[t_name][i] == math.inf:
                 n = interpolate(i, i_sx_end, t_val)
             i -= 1
     elif t_val < dx_end: #if the target is out of the range in the right side
@@ -151,7 +151,7 @@ def search_opt(t_name, t_val, sx_end, dx_end, i_sx_end, i_dx_end):
         i = i_dx_end + 1
         while n == s_cod["crfs"]-1 and i <= s_cod["crfs"]-1:
             #the first point you find is the new upper end of the range
-            if not res_matrix[t_name][i] == 0:
+            if not res_matrix[t_name][i] == math.inf:
                 n = interpolate(i_dx_end, i, t_val)
             i += 1
     return n
@@ -167,32 +167,8 @@ def compute_target(t, s):
     new_target = t_val * s / t
     return new_target
 
-def combine():
-    min_rate = math.inf
-    min_dist = 100
-    o = []
-    for comb in itertools.product(*s_crfs): #for each combination
-        dist = 0
-        rate = 0
-        for i,v in enumerate(comb):
-            dist = dist + (100 - o_data["shots"][i]["assessment"]["vmaf"][v]) * o_data["shots"][i]["duration"]
-            rate = rate + o_data["shots"][i]["assessment"]["rate"][v] * o_data["shots"][i]["duration"]
-        dist = dist / duration
-        rate = rate / duration
-        if t_name == "vmaf":
-            if dist < (100 - t_val) and rate < min_rate:
-                min_rate = rate
-                o = list(comb)
-        elif t_name == "rate":
-            if rate < t_val and dist < min_dist:
-                min_dist = dist
-                o = list(comb)
-        else:
-            print("ERROR - not a target")
-            exit()
-    if not o:
-        o = list(comb)
-    return o
+def compute_slope(xl,yl,xr,yr):
+    return -(yl-yr)/(xl-xr)
 
 def mux(t_i, t_name, t_val):
     file_list = "" #list of encoded vids to be stored in OUT_LIST
@@ -276,20 +252,108 @@ point_index = 0
 for t_name in target_list:
     for t_val in target_list[t_name]:
         
-        shot_index = 0
-        if target_index == 0:
-            s_crfs = np.zeros(shape=(num_scenes, (max_range_crf+1)-min_range_crf), dtype=int) #init structure
-            for shot in sorted(os.listdir(REF_PATH)): #for each shot
-                for current_crf in range(min_range_crf, max_range_crf+1):
-                    out = encode(shot, shot_index, current_crf) #encoding
-                    assess(shot, out) #quality assessment
-                    store_results(shot_index, current_crf, out)
-                s_crfs[shot_index] = [c for c in o_data["shots"][shot_index]["assessment"]["crf"] if c != 0] #take only encoded shots
+        t_intvl = [np.zeros((2,num_scenes)), np.zeros((2,num_scenes))] # t_ext[max min] ; t_ext[0][rate dist]
+        s_intvl = np.zeros((2,num_scenes)) # [rate dist]
+        t_ext = {"l": [], "r": [], "slope": 0.0}
+        s_ext = {"l": [], "r": [], "slope": 0.0}
+        t_pts = np.zeros((2,num_scenes), dtype=int) # t_pts[max min]
+        s_pts = np.zeros(num_scenes, dtype=int)
+            
+        if point_index == 0: #if there are no points (first loop)
+           shot_index = 0
+           for shot in sorted(os.listdir(REF_PATH)): #for each shot
+                out = encode(shot, shot_index, max_range_crf) #encoding
+                assess(shot, out) #quality assessment
+                store_results(shot_index, max_range_crf, out)
+                r = o_data["shots"][shot_index]["assessment"]["rate"][max_range_crf]
+                d = 100 - o_data["shots"][shot_index]["assessment"]["vmaf"][max_range_crf]
+                t_pts[0][shot_index] = max_range_crf
+                t_intvl[0][0, shot_index] = r * o_data["shots"][shot_index]["duration"] / duration
+                t_intvl[0][1, shot_index] = d * o_data["shots"][shot_index]["duration"] / duration
                 shot_index += 1
-        opt_crfs = combine() #create all combinations
-        print("--out_crfs= " + str(opt_crfs))
+            t_ext["l"] = np.einsum('ij->i',t_intvl[0])
+            point_index += 1
+        if point_index == 1: #if there are no points to compare (second loop)
+            shot_index = 0
+            for shot in sorted(os.listdir(REF_PATH)): #for each shot
+                out = encode(shot, shot_index, min_range_crf) #encoding
+                assess(shot, out) #quality assessment
+                store_results(shot_index, min_range_crf, out)
+                r = o_data["shots"][shot_index]["assessment"]["rate"][min_range_crf]
+                d = 100 - o_data["shots"][shot_index]["assessment"]["vmaf"][min_range_crf]
+                t_pts[1][shot_index] = min_range_crf
+                t_intvl[1][0, shot_index] = r * o_data["shots"][shot_index]["duration"] / duration
+                t_intvl[1][1, shot_index] = d * o_data["shots"][shot_index]["duration"] / duration
+                shot_index += 1
+            t_ext["r"] = np.einsum('ij->i',t_intvl[1])
+            t_ext["slope"] = compute_slope(t_ext["l"][0],t_ext["l"][1],t_ext["r"][0],t_ext["r"][1])
+            point_index += 1
+                
+        while not np.array_equal(t_pts[0],t_pts[1]):
+            point_index += 1
+            shot_index = 0
+            for shot in sorted(os.listdir(REF_PATH)): #for each shot
+                current_point = None
+                new_point = max_range_crf
+                res_matrix = copy.deepcopy(o_data["shots"][shot_index]["assessment"])
+                res_matrix[t_name] = [np.inf if item == 0 else item for item in res_matrix[t_name]]
+                l = [res_matrix["rate"][t_pts[0][shot_index]],100-res_matrix["vmaf"][t_pts[0][shot_index]]]
+                r = [res_matrix["rate"][t_pts[1][shot_index]],100-res_matrix["vmaf"][t_pts[1][shot_index]]]
+                s_ext["l"] = np.asarray(l) * o_data["shots"][shot_index]["duration"] / duration
+                s_ext["r"] = np.asarray(r) * o_data["shots"][shot_index]["duration"] / duration
+                s_ext["slope"] = compute_slope(s_ext["l"][0],s_ext["l"][1],s_ext["r"][0],s_ext["r"][1])
+                s_target = compute_target(t_ext["slope"], s_ext["slope"])
+                        
+                while not current_point == new_point: #if no convergence
+                    if res_matrix["crf"][new_point] == 0:
+                        out = encode(shot, shot_index, new_point) #encoding
+                        assess(shot, out) #quality assessment
+                        store_results(shot_index, new_point, out)
+                        res_matrix["crf"][new_point] = new_point #save new crf in res_matrix
+                        res_matrix["rate"][new_point] = o_data["shots"][shot_index]["assessment"]["rate"][new_point]
+                        res_matrix["vmaf"][new_point] = o_data["shots"][shot_index]["assessment"]["vmaf"][new_point]
+                            
+                    #element-wise difference between the metric and its target value
+                    differences = np.asarray(abs(np.asarray(res_matrix[t_name]) - s_target))
+                    i_first_min = np.argmin(differences) #the element with the value closer to the target
+                    nd_diff = differences.copy()
+                    nd_diff[i_first_min] = np.inf #replace the minimum with inf
+                    i_second_min = np.argmin(nd_diff) #find the second minimum
+                    current_point = i_first_min #the index of the point closer to the target
+
+                    #swap the values of the two ends if the lower end is bigger than the upper end
+                    if res_matrix[t_name][i_first_min] > res_matrix[t_name][i_second_min]:
+                        new_point = search_opt(t_name, s_target, res_matrix[t_name][i_first_min], \
+                                    res_matrix[t_name][i_second_min], i_first_min, i_second_min)
+                    elif res_matrix[t_name][i_first_min] < res_matrix[t_name][i_second_min]:
+                        new_point = search_opt(t_name, s_target, res_matrix[t_name][i_second_min], \
+                                    res_matrix[t_name][i_first_min], i_second_min, i_first_min)
+                    else: #it may happen that the results are the same ex. black short shots
+                        current_point = max(i_first_min,i_second_min)
+                        new_point = current_point
+
+                #save current opt points in the list
+                r = o_data["shots"][shot_index]["assessment"]["rate"][current_point]
+                d = 100 - o_data["shots"][shot_index]["assessment"]["vmaf"][current_point]
+                s_pts[shot_index] = current_point
+                s_intvl[0, shot_index] = r * o_data["shots"][shot_index]["duration"] / duration
+                s_intvl[1, shot_index] = d * o_data["shots"][shot_index]["duration"] / duration
+                shot_index += 1
+
+            #compute rl and compare it with rc
+            current_target = {"rate": np.einsum('i->',s_intvl[0]), "vmaf": abs(100 - np.einsum('i->',s_intvl[1]))}
+            if current_target[t_name] > t_val:
+                t_intvl[1] = s_intvl
+                t_pts[1] = s_pts
+            else:
+                t_intvl[0] = s_intvl
+                t_pts[0] = s_pts
+            t_ext["l"] = np.einsum('ij->i',t_intvl[0])
+            t_ext["r"] = np.einsum('ij->i',t_intvl[1])
+            t_ext["slope"] = compute_slope(t_ext["l"][0],t_ext["l"][1],t_ext["r"][0],t_ext["r"][1])
+
         for i in range(0,num_scenes): #save the opt crf for each shot
-            save_opt(i, target_index, opt_crfs[i])
+            save_opt(i, target_index, t_pts[1][i])
 
         target_index += 1
 

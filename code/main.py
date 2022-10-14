@@ -61,7 +61,7 @@ TIME_LOGS = "config/" + config["DIR"]["TIME_LOGS"]
 shot_th = config["OPT"]["SHOT_DETECT_TH"] #change shot threshold
 
 #output file
-OUT_LIST = config["DIR"]["OUT_LIST"]
+OUT_LIST = "config/" + config["DIR"]["OUT_LIST"]
 OUT_PATH = config["DIR"]["OUT_PATH"]
 
 #all computed points, by row: crf, bitrate and distortion metric
@@ -171,15 +171,15 @@ def mux(t_i, t_name, t_val):
     file_list = "" #list of encoded vids to be stored in OUT_LIST
     with open(rd_file, 'r') as f:
         global_.data = json.load(f)
-    for shot in range(0,global_.num_scenes):
+    for shot in range(0,global_.num_shots):
         opt_crf = global_.data["shots"][shot]["opt_points"][t_i]["crf"]
-        file_list = file_list + "file '" + dist_path + str(shot) + "/" \
+        file_list = file_list + "file '../" + dist_path + str(shot) + "/" \
         + str(opt_crf) + "_" + config["ENC"]["CODEC"].upper() + "." + global_.s_cod["container"] + "' \n"
     with open(OUT_LIST, 'w') as w:
         w.write(file_list)
     o = OUT_PATH+source_name[:9] + "_" + t_name + str(t_val) + opt_type +\
         "_" + config["ENC"]["CODEC"].upper() + "." + global_.s_cod["container"]
-    mux = f"ffmpeg -f concat -i {OUT_LIST} -c copy {o}"
+    mux = f"ffmpeg -f concat -safe 0 -i {OUT_LIST} -c copy {o}"
     subprocess.call(mux, shell=True)
     
 
@@ -198,7 +198,7 @@ else:
     print("Not such an input type")
     sys.exit()
 
-global_.num_scenes = shot_change_detection(source_path)
+global_.num_shots = shot_change_detection(source_path)
     
 #init values based on the selected output codec
 if config["ENC"]["CODEC"] == "avc":
@@ -240,7 +240,7 @@ global_.data["shots"][0]["opt_points"] = struct_points
     
 #add empty shots
 base_shot = global_.data["shots"][0]
-for i in range(0, global_.num_scenes):
+for i in range(0, global_.num_shots):
     base_shot["index"] = i #assign index to shots in json file
     struct_shots.append(copy.deepcopy(base_shot))
 global_.data["shots"] = struct_shots
@@ -265,7 +265,6 @@ print("-init done")
 # -----------------------------------------------------------------------------
 
 target_index = 0
-step_index = 0
 for t_name in target_list:
     for t_val in target_list[t_name]:
         
@@ -285,7 +284,7 @@ for t_name in target_list:
             sys.exit()
         
         print("--out_crfs= " + str(opt))
-        for i in range(0,global_.num_scenes): #save the opt crf for each shot
+        for i in range(0,global_.num_shots): #save the opt crf for each shot
             save_opt(i, target_index, opt[i])
         target_index += 1
         

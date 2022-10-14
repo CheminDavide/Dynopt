@@ -11,7 +11,7 @@
         "DIST_TARGETS": [75],
         "RATE_TARGETS": [500000],
         "DIST_METRIC": "vmaf",
-        "OPT_METHOD": "bf",
+        "OPT_METHOD": "lg",
         "SHOT_DETECT_TH": 0.25
         },
     "DIR": {

@@ -11,7 +11,7 @@ def combine(sc, tn, tv):
     Create all encoded points possible combinations and find the closest to the target
     
     Output:
-    - o : list (num_scenes)
+    - o : list (num_shots)
         Best CRF combination for the current target
     """
     o = []
@@ -40,14 +40,22 @@ def combine(sc, tn, tv):
 
 def run(ti, tn, tv):
     """
+    Brute force implementation
     Create all encoded points possible combinations and find the closest to the target
-    
+
+    Input:
+    - ti : int
+        Current target index
+    - tn : string
+        Current target name
+    - tv : float
+        Current target value
     Output:
-    - o : list (num_scenes)
+    - out : list(num_shots)
         Optimal CRF combination for the current target
     """
     shot_index = 0
-    s_crfs = np.zeros((global_.num_scenes, len(global_.npts)), dtype=int) #init structure
+    s_crfs = np.zeros((global_.num_shots, len(global_.npts)), dtype=int) #init structure
     for shot in sorted(os.listdir(config["DIR"]["REF_PATH"])): #for each shot
         for current_crf in global_.npts:
             if ti == 0:

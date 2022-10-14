@@ -1,7 +1,7 @@
 import subprocess #to access ffmpeg in the system
 import json #to handle json files
 
-num_scenes = 0
+num_shots = 0
 duration = 0.0
 npts = []
 

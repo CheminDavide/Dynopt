@@ -38,7 +38,7 @@ python3 code/main.py
 
 1. Before running the code, configure settings in `config/config.json`
 
-These are the encoding variables you can configure:
+* These are the encoding variables you can configure:
     * `"CODEC" [string]` : output codec
     values: "avc", "hevc", "vp9", !!not implemented: "av1", "vvc"
     * `"WIDTH" [int]` : input and output width
@@ -52,7 +52,7 @@ These are the encoding variables you can configure:
     * `"NUM_INTERVALS" [int]` : number of CRF or points per interval, more for more precision
     ex.10 the interval [10,40] is splitted into 10 intervals (N+1 CRF points)
 
-These are the optimization settings you can configure
+* These are the optimization settings you can configure
     * `"DIST_TARGETS [list(N)]"` : list of quality targets
         ex.[75,90] - a value between 0 and 100 in case of VMAF, also empty
     * `"RATE_TARGETS" [list(N)]` : list of bitrate targets
@@ -64,7 +64,7 @@ These are the optimization settings you can configure
     * `"SHOT_DETECT_TH" [float]` : shot detection threshold
         ex.0.25
         
-In the DIR section you can configure also directories and files paths.
+* In the DIR section you can configure also directories and files paths.
 
 2. Run the main script:
 ```bash

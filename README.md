@@ -42,29 +42,29 @@ python3 code/main.py
     * `"CODEC" [string]` : output codec
         - values: "avc", "hevc", "vp9", !!not implemented: "av1", "vvc"
     * `"WIDTH" [int]` : input and output width
-    ex.1920
+        - ex.1920
     * `"HEIGHT" [int]` : input and output height
-    ex.1080
+        - ex.1080
     * `"FPS" [float]` : input and output frame rate
-    ex.29.97
+        - ex.29.97
     * `"CRF_RANGE" [list(2)]` : CRF encoding range
-    ex.[10,40]
+        - ex.[10,40]
     * `"NUM_INTERVALS" [int]` : number of CRF or points per interval, more for more precision
-    ex.10 the interval [10,40] is splitted into 10 intervals (N+1 CRF points)
+        - ex.10 the interval [10,40] is splitted into 10 intervals (N+1 CRF points)
 
 * These are the optimization settings you can configure
     * `"DIST_TARGETS [list(N)]"` : list of quality targets
-        ex.[75,90] - a value between 0 and 100 in case of VMAF, also empty
+        - ex.[75,90] - a value between 0 and 100 in case of VMAF, also empty
     * `"RATE_TARGETS" [list(N)]` : list of bitrate targets
-        ex.[5000000] - also empty
+        - ex.[5000000] - also empty
     * `"DIST_METRIC" [string]` : quality metric
-        values "vmaf" !!not implemented: "psnr","ssim", "mssim"
+        - values "vmaf" !!not implemented: "psnr","ssim", "mssim"
     * `"OPT_METHOD" [string]` : optimization method
-        values: #bf = brute force, lg = lagrange, cf = curve fitting
+        - values: #bf = brute force, lg = lagrange, cf = curve fitting
     * `"SHOT_DETECT_TH" [float]` : shot detection threshold
-        ex.0.25
+        - ex.0.25
         
-* In the DIR section you can configure also directories and files paths.
+* In the DIR section you can also change directories and files paths.
 
 #### 2. Run the main script:
 ```bash

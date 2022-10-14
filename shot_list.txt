@@ -1,4 +1,0 @@
-file 'test_vids/temp_encoded/0/31_AVC.mp4' 
-file 'test_vids/temp_encoded/1/34_AVC.mp4' 
-file 'test_vids/temp_encoded/2/29_AVC.mp4' 
-file 'test_vids/temp_encoded/3/29_AVC.mp4' 

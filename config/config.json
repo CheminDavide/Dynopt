@@ -1,0 +1,26 @@
+{
+    "ENC": {
+        "CODEC": "avc",
+        "WIDTH": 480,
+        "HEIGHT": 270,
+        "FPS": 29.97,
+        "CRF_RANGE": [10,40],
+        "NUM_INTERVALS": 5
+        },
+    "OPT": {
+        "DIST_TARGETS": [75],
+        "RATE_TARGETS": [500000],
+        "DIST_METRIC": "vmaf",
+        "OPT_METHOD": "bf",
+        "SHOT_DETECT_TH": 0.25
+        },
+    "DIR": {
+        "REF_PATH": "tests_vids/tempRAW_refs/",
+        "DIST_PATH": "tests_vids/temp_encoded/",
+        "RD_FOLDER": "tests_rd/",
+        "VMAF_LOGS": "vmaf_logs.json",
+        "TIME_LOGS": "shot_detection.log",
+        "OUT_LIST": "shot_list.txt",
+        "OUT_PATH": "tests_vids/OPT_vids/"
+        }
+}

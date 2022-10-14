@@ -36,11 +36,11 @@ python3 code/main.py
 
 ## Usage
 
-1. Before running the code, configure settings in `config/config.json`
+#### 1. Before running the code, configure settings in `config/config.json`
 
 * These are the encoding variables you can configure:
     * `"CODEC" [string]` : output codec
-    values: "avc", "hevc", "vp9", !!not implemented: "av1", "vvc"
+        - values: "avc", "hevc", "vp9", !!not implemented: "av1", "vvc"
     * `"WIDTH" [int]` : input and output width
     ex.1920
     * `"HEIGHT" [int]` : input and output height
@@ -66,12 +66,12 @@ python3 code/main.py
         
 * In the DIR section you can configure also directories and files paths.
 
-2. Run the main script:
+#### 2. Run the main script:
 ```bash
 python3 code/main.py
 ```
 
-3. Select from the dialogue box the raw video to input.
+#### 3. Select from the dialogue box the raw video to input.
 Results will be displayed in the console. Optimal encoded videos are stored in the specified folder.
 
 ## How it works

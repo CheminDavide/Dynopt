@@ -74,4 +74,25 @@ python3 code/main.py
 #### 3. Select from the dialogue box the raw video to input.
 Results will be displayed in the console. Optimal encoded videos are stored in the specified folder.
 
-## How it works
+## Directory tree
+```bash
+__code/
+____ main.py
+____ bf.py #brute force code
+____ lg.py #lagrange method
+____ cf.py #curve fitting implementation
+____ global_.py #global variables and methods
+
+__config/
+____ config.json #config file
+____ shot_detection.log #timestamps of the shots in the scene
+____ shot_list.txt #file list of encoded shots to merge
+____ template.json #RD results structure
+____ vmaf_logs.json #VMAF library results
+
+__env/ #virtual environment with required modules
+
+__tests_rd/ #json files to store CRF, distortion and rate values for later uses
+
+__tests_vids/ #raw input files, temporary encoded shots, optimized output videos
+```

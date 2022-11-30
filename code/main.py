@@ -18,6 +18,7 @@ from tkinter import filedialog #to open import dialog box
 
 #custom import
 import global_
+import fx
 import bf
 import lg
 import cf
@@ -270,14 +271,21 @@ for t_name in target_list:
         
         global_.npts = interval(global_.s_cod["opr_range"], config["ENC"]["NUM_INTERVALS"]).tolist()
         
-        if opt_type == "bf": #brute force approach
+        if opt_type == "fx": #brute force approach
+            opt = fx.run(target_index, t_name, t_val)
+            
+        elif opt_type == "bf": #brute force approach
             opt = bf.run(target_index, t_name, t_val)
             
         elif opt_type == "lg": #lagrangian optimization
             opt = lg.run(target_index, t_name, t_val)
         
         elif opt_type == "cf": #curve fitting
-            print("TODO")
+            opt = cf.run(target_index, t_name, t_val)
+            shot_index = 0
+            for shot in sorted(os.listdir(config["DIR"]["REF_PATH"])): #for each shot
+                out = global_.encode(shot, shot_index, opt[shot_index]) #encoding
+                shot_index += 1
                 
         else:
             print("ERROR - not an opt method")

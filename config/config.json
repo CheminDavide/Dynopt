@@ -9,9 +9,9 @@
         },
     "OPT": {
         "DIST_TARGETS": [75],
-        "RATE_TARGETS": [500000],
+        "RATE_TARGETS": [],
         "DIST_METRIC": "vmaf",
-        "OPT_METHOD": "lg",
+        "OPT_METHOD": "cf",
         "SHOT_DETECT_TH": 0.25
         },
     "DIR": {

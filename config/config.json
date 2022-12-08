@@ -1,17 +1,17 @@
 {
     "ENC": {
         "CODEC": "avc",
-        "WIDTH": 480,
-        "HEIGHT": 270,
-        "FPS": 29.97,
+        "WIDTH": 1280,
+        "HEIGHT": 720,
+        "FPS": 24,
         "CRF_RANGE": [10,40],
-        "NUM_INTERVALS": 5
+        "NUM_INTERVALS": 15
         },
     "OPT": {
-        "DIST_TARGETS": [75],
-        "RATE_TARGETS": [],
+        "DIST_TARGETS": [60,70,80,85,90,93,96,98],
+        "RATE_TARGETS": [500000,800000,1000000,1300000,1600000,2000000,2500000,3000000],
         "DIST_METRIC": "vmaf",
-        "OPT_METHOD": "cf",
+        "OPT_METHOD": "lg",
         "SHOT_DETECT_TH": 0.25
         },
     "DIR": {

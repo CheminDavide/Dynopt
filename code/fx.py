@@ -65,10 +65,10 @@ def run(ti, tn, tv):
     
     for shot in sorted(os.listdir(config["DIR"]["REF_PATH"])): #for each shot
         for n_crf, val_crf in enumerate(global_.npts):
-            if ti == 0:
-                out = global_.encode(shot, shot_index, val_crf) #encoding
-                global_.assess(shot, out) #quality assessment
-                global_.store_results(shot_index, val_crf, out)
+            if ti == 0 and global_.new_enc:
+                path = global_.encode(shot, shot_index, val_crf) #encoding
+                global_.assess(shot, path) #quality assessment
+                global_.set_results(shot_index, int(val_crf), path)
             r = global_.data["shots"][shot_index]["assessment"]["rate"][val_crf]
             d = global_.data["shots"][shot_index]["assessment"]["dist"][val_crf]
             s_pts["rate"][shot_index][n_crf] = r * global_.data["shots"][shot_index]["duration"] / global_.duration

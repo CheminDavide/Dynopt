@@ -1,9 +1,12 @@
 import subprocess #to access ffmpeg in the system
 import json #to handle json files
 
+#TODO add comments
 num_shots = 0
 duration = 0.0
 npts = []
+
+new_enc = True
 
 add_info = ""
 lib = ""
@@ -38,7 +41,7 @@ def encode(s,i,c):
     enc = f"ffmpeg -f rawvideo -video_size {width}x{height} -r {fps} -pixel_format yuv420p \
         -i {ref_path + s} -c:v {lib} -crf {c} {add_info} {o} -hide_banner -loglevel error"
     subprocess.call(enc, shell=True)
-    print("-encoded= " + o)
+    print("-encode: " + o)
     return o
 
 def assess(s,f):
@@ -65,7 +68,7 @@ def assess(s,f):
             -f null -"
     subprocess.call(c_vmaf, shell=True)
 
-def store_results(i,c,f):
+def set_results(i,c,f):
     """
     Store the quality and rate results for each shot at each encoded CRF
 

@@ -25,7 +25,10 @@ def compute_slope(xl,yl,xr,yr):
     - out : float
         Slope between the two points
     """
-    return -(yl-yr)/(xl-xr)
+    if xl-xr == 0:
+        return 0
+    else:
+        return -(yl-yr)/(xl-xr)
 
 def eq_fit(x, a, b, c):
     """
@@ -89,10 +92,10 @@ def run(ti, tn, tv):
     shot_index = 0
     for shot in sorted(os.listdir(config["DIR"]["REF_PATH"])): #for each shot
         for n_crf, val_crf in enumerate(global_.npts): #for each init crf
-            if ti == 0:
-                out = global_.encode(shot, shot_index, val_crf) #encoding
-                global_.assess(shot, out) #quality assessment
-                global_.store_results(shot_index, int(val_crf), out)
+            if ti == 0 and global_.new_enc:
+                path = global_.encode(shot, shot_index, val_crf) #encoding
+                global_.assess(shot, path) #quality assessment
+                global_.set_results(shot_index, int(val_crf), path)
             #store results in t_pts dictionary, weighted by duration
             r = global_.data["shots"][shot_index]["assessment"]["rate"][val_crf]
             d = 100 - global_.data["shots"][shot_index]["assessment"]["dist"][val_crf]
@@ -113,23 +116,18 @@ def run(ti, tn, tv):
     t_ext["r"] = [t_rate[0], t_dist[0]] #first element, lowest crfs ex.0
     t_ext["slope"] = compute_slope(t_ext["l"][0],t_ext["l"][1],t_ext["r"][0],t_ext["r"][1])
     
-    print("-------")
     #when new solution is the same as the past one
     while not (curr_opt["r"] == prev_opt["r"]).all() or not (curr_opt["l"] == prev_opt["l"]).all():
-        print(t_ext["slope"])
         prev_opt = curr_opt.copy() #keep track of the previous optimal combination
         diffs = abs(t_tan - t_ext["slope"]) #difference between all and current slope
         s_mins = np.argmin(diffs, axis=1) #find the min difference
-        print(np.min(diffs, axis=1)[0])
         for shot_index in range(0,global_.num_shots):
             s_pts["crf"][shot_index] = t_pts["crf"][s_mins[shot_index]]
             s_pts["rate"][shot_index] = t_pts["rate"][shot_index][s_mins[shot_index]]
             s_pts["dist"][shot_index] = t_pts["dist"][shot_index][s_mins[shot_index]]
         t_rate = np.einsum('i->',s_pts["rate"]) #sum rate results per crf
         t_dist = np.einsum('i->',s_pts["dist"]) #sum dist results per crf
-        print(np.einsum('i->',s_pts[tn]))
         if np.einsum('i->',s_pts[tn]) > tv: #if current opt go beyond the target
-            print("more")
             if tn == "dist":
                 t_ext["l"] = [t_rate, t_dist] #new general point
                 curr_opt["l"] = s_pts["crf"].copy()
@@ -137,14 +135,12 @@ def run(ti, tn, tv):
                 t_ext["r"] = [t_rate, t_dist]
                 curr_opt["r"] = s_pts["crf"].copy()
         else:
-            print("less")
             if tn == "dist":
                 t_ext["r"] = [t_rate, t_dist] #new general point
                 curr_opt["r"] = s_pts["crf"].copy()
             elif tn == "rate":
                 t_ext["l"] = [t_rate, t_dist]
                 curr_opt["l"] = s_pts["crf"].copy()
-        print("----------")
         t_ext["slope"] = compute_slope(t_ext["l"][0],t_ext["l"][1],t_ext["r"][0],t_ext["r"][1])
                 
     if tn == "dist":

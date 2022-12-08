@@ -47,8 +47,9 @@ source_path = os.path.relpath(filedialog.askopenfilename())
 source_name = os.path.basename(source_path).split('.')[0]
 ref_path = config["DIR"]["REF_PATH"]
 dist_path = config["DIR"]["DIST_PATH"]
-[os.remove(ref_path+f) for f in os.listdir(ref_path)] #clean temp_refs folder
-[shutil.rmtree(dist_path+f) for f in os.listdir(dist_path)] #clean temp_encoded folder
+if global_.new_enc:
+    [os.remove(ref_path+f) for f in os.listdir(ref_path)] #clean temp_refs folder
+    [shutil.rmtree(dist_path+f) for f in os.listdir(dist_path)] #clean temp_encoded folder
 
 #assessment files path
 tm_file = "config/template.json"
@@ -79,7 +80,7 @@ def init_res_matrix(x):
 
     Input:
     - x : int
-        Number of scenes
+        Number of CRF points
     """
     str_matrix["crf"] = np.zeros(x, dtype=int).tolist()
     str_matrix["rate"] = np.zeros(x, dtype=int).tolist()
@@ -96,16 +97,13 @@ def shot_change_detection(p):
     - n : int
         Number of scenes
     """
+    print("-analyse: detecting shots...")
     start_t = 0.0
     end_t = 0.0
     #return when the shot changes
-    det = f"ffmpeg -i {p} -filter_complex:v \"select='gt(scene,{shot_th})', \
+    det = f"ffmpeg -i {p} -hide_banner -loglevel error -filter_complex:v \"select='gt(scene,{shot_th})', \
         metadata=print:file={TIME_LOGS}\" -f null -"
     subprocess.call(det, shell=True)
-    #get the total duration for the last cut
-    idu = f"ffprobe -v error -select_streams v:0 -show_entries format:stream -print_format json {p}"
-    dta = json.loads(subprocess.run(idu.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout)
-    global_.duration = float(dta['format']['duration'])
     
     with open(TIME_LOGS, 'r') as r:
         tm_log = r.read().splitlines()[::2]
@@ -119,10 +117,11 @@ def shot_change_detection(p):
         
         #cut the video
         end_t = l.split("pts_time:",1)[1]
-        cut = f"ffmpeg -ss {start_t} -to {end_t} -i {p} \
+        cut = f"ffmpeg -ss {start_t} -to {end_t} -i {p} -hide_banner -loglevel error\
             -pix_fmt yuv420p {ref_path}scene{str(i).zfill(7)}.yuv"
         subprocess.call(cut, shell=True)
         start_t = end_t
+    print("-analyse: " + str(n) + " detected shots")
     return n
 
 def save_opt(i, t, opt):
@@ -157,18 +156,22 @@ def interval(l,n):
     w = (l[1] - l[0]) / (n - 1)
     return np.array([round(l[0]+i*w) for i in range(n)])
 
-def mux(t_i, t_name, t_val):
+def mux(t_i, t_n, t_v):
     """
     Muxing of the all single optimal encoded shots
 
     Input:
     - t_i : index
         Target index
-    - t_name : string
+    - t_n : string
         Current target type
-    - t_val : int
+    - t_v : int
         Current target value
     """
+    if t_n == "dist":
+        t_n = dist_metric
+        if dist_metric == "vmaf":
+            t_v = 100 - t_v
     file_list = "" #list of encoded vids to be stored in OUT_LIST
     with open(rd_file, 'r') as f:
         global_.data = json.load(f)
@@ -178,9 +181,10 @@ def mux(t_i, t_name, t_val):
         + str(opt_crf) + "_" + config["ENC"]["CODEC"].upper() + "." + global_.s_cod["container"] + "' \n"
     with open(OUT_LIST, 'w') as w:
         w.write(file_list)
-    o = OUT_PATH+source_name[:9] + "_" + t_name + str(t_val) + opt_type +\
+    o = OUT_PATH+source_name[:9] + "_" + t_n + str(t_v).zfill(len(str(target_list[t_name][-1]))) + opt_type +\
         "_" + config["ENC"]["CODEC"].upper() + "." + global_.s_cod["container"]
-    mux = f"ffmpeg -f concat -safe 0 -i {OUT_LIST} -c copy {o}"
+    mux = f"ffmpeg -f concat -safe 0 -i {OUT_LIST} -c copy {o} -hide_banner -loglevel error"
+    print("-mux: " + o)
     subprocess.call(mux, shell=True)
     
 
@@ -188,18 +192,13 @@ def mux(t_i, t_name, t_val):
 #                       Init and shot detection
 # -----------------------------------------------------------------------------
 
-struct_points = [] #structure of target points for the json file
-struct_shots = [] #structure of shots for the json file
-
 if source_path.endswith(".yuv"):
-    print("yuv input")
+    print("-input: yuv")
 elif source_path.endswith(".y4m"):
-    print("y4m input")
+    print("-input: y4m")
 else:
-    print("Not such an input type")
+    print("ERROR: not an input type")
     sys.exit()
-
-global_.num_shots = shot_change_detection(source_path)
     
 #init values based on the selected output codec
 if config["ENC"]["CODEC"] == "avc":
@@ -212,42 +211,62 @@ elif config["ENC"]["CODEC"] == "vp9":
     global_.s_cod = PARAM_VP9
     init_res_matrix(PARAM_VP9["crfs"])
 else:
-    print("Not such a codec")
+    print("ERROR: not a codec")
     sys.exit()
 
 if config["ENC"]["NUM_INTERVALS"] > global_.s_cod["opr_range"][1] - global_.s_cod["opr_range"][0]:
     print("ERROR: too many encodings")
     sys.exit()
+if global_.s_cod["opr_range"][0] > global_.s_cod["opr_range"][1]:
+    print("ERROR: wrong CRF range")
+    sys.exit()
+    
+#get the total duration for the last cut
+idu = f"ffprobe -v error -select_streams v:0 -show_entries format:stream \
+    -print_format json {source_path} -hide_banner -loglevel error"
+dta = json.loads(subprocess.run(idu.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout)
+global_.duration = float(dta['format']['duration'])
 
-with open(tm_file, 'r') as f:
-    global_.data = json.load(f)
-    
-#add source name and results matrix
-global_.data["content"] = source_name
-global_.data["codec"] = config["ENC"]["CODEC"]
-global_.data["width"] = config["ENC"]["WIDTH"]
-global_.data["height"] = config["ENC"]["HEIGHT"]
-global_.data["fps"] = config["ENC"]["FPS"]
-global_.data["shots"][0]["assessment"] = str_matrix
-    
-#add emplty target points
-base_point = global_.data["shots"][0]["opt_points"][0]
-for t_name in target_list:
-    for t_val in target_list[t_name]:
-        base_point["metric"] = t_name
-        base_point["target"] = t_val
-        struct_points.append(copy.deepcopy(base_point))
-global_.data["shots"][0]["opt_points"] = struct_points
-    
-#add empty shots
-base_shot = global_.data["shots"][0]
-for i in range(0, global_.num_shots):
-    base_shot["index"] = i #assign index to shots in json file
-    struct_shots.append(copy.deepcopy(base_shot))
-global_.data["shots"] = struct_shots
+if global_.new_enc:
 
-with open(rd_file, 'w') as w:
-    json.dump(global_.data, w, separators=(',',': '))
+    struct_points = [] #structure of target points for the json file
+    struct_shots = [] #structure of shots for the json file
+
+    with open(tm_file, 'r') as f:
+        global_.data = json.load(f)
+
+    #add source name and results matrix
+    global_.data["content"] = source_name
+    global_.data["codec"] = config["ENC"]["CODEC"]
+    global_.data["width"] = config["ENC"]["WIDTH"]
+    global_.data["height"] = config["ENC"]["HEIGHT"]
+    global_.data["fps"] = config["ENC"]["FPS"]
+    global_.data["shots"][0]["assessment"] = str_matrix
+    
+    global_.num_shots = shot_change_detection(source_path)
+
+    #add emplty target points
+    base_point = global_.data["shots"][0]["opt_points"][0]
+    for t_name in target_list:
+        for t_val in target_list[t_name]:
+            base_point["metric"] = t_name
+            base_point["target"] = t_val
+            struct_points.append(copy.deepcopy(base_point))
+    global_.data["shots"][0]["opt_points"] = struct_points
+
+    #add empty shots
+    base_shot = global_.data["shots"][0]
+    for i in range(0, global_.num_shots):
+        base_shot["index"] = i #assign index to shots in json file
+        struct_shots.append(copy.deepcopy(base_shot))
+    global_.data["shots"] = struct_shots
+
+    with open(rd_file, 'w') as w:
+        json.dump(global_.data, w, separators=(',',': '))
+else:
+    with open(rd_file, 'r') as f:
+        global_.data = json.load(f)
+    global_.num_shots = len(global_.data["shots"])
     
 if dist_metric == "vmaf":
     target_list["dist"] = 100 - np.asarray(target_list["dist"])
@@ -256,10 +275,10 @@ elif dist_metric == "psnr":
     #TODO normalize psnr and set a max
     sys.exit()
 else:
-    print("ERROR - not a target")
+    print("ERROR: not a target")
     sys.exit()
     
-print("-init done")
+print("-init: done")
 
 # -----------------------------------------------------------------------------
 #                              Exe
@@ -288,20 +307,13 @@ for t_name in target_list:
                 shot_index += 1
                 
         else:
-            print("ERROR - not an opt method")
+            print("ERROR: not an opt method")
             sys.exit()
         
-        print("--out_crfs= " + str(opt))
+        print("-out_crfs= " + str(opt))
         for i in range(0,global_.num_shots): #save the opt crf for each shot
             save_opt(i, target_index, opt[i])
-        target_index += 1
-        
-target_index = 0
-if dist_metric == "vmaf":
-    target_list["dist"] = 100 - np.asarray(target_list["dist"])
-for t_name in target_list:
-    for t_val in target_list[t_name]:
-        if t_name == "dist":
-            t_name = dist_metric
+
         mux(target_index, t_name, t_val)
+        
         target_index += 1

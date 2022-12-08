@@ -22,39 +22,42 @@ def compute_slope(xl,yl,xr,yr):
     - out : float
         Slope between the two points
     """
-    return -(yl-yr)/(xl-xr)
+    if xl-xr == 0:
+        return 0
+    else:
+        return -(yl-yr)/(xl-xr)
 
-def check_side(s,pts,mins,m):
+def check_side(i,pts,m,s):
     """
     Check if, when drawing a line intersectin a point with a given slope, none of the points are in the left side of the line.
     The direction of the line is lower-right to upper-left.
 
     Input:
-    - s : int
+    - i : int
         Shot index
     - pts : dict
         Encoded shot info (crf,rate,dist)
-    - s_min : np.array(num_shots,num_intervals-1)
-        For each shot, the index of the minimum value of the array
-    - m : float
+    - m : int
+        Index of the minimum value of the array
+    - s : float
         Total slope
     Output:
-    - out : np.array(num_shots)
-        Updated list of intervals with closest slope to the total
+    - m : int
+        Updated minimum value: point with the closest slope to the total
     """
     count = 1
     while count > 0:
-        l0 = [(m*pts["rate"][s][mins[s]] - pts["dist"][s][mins[s]])/m,0]
-        l1 = [0,pts["dist"][s][mins[s]] - m*pts["rate"][s][mins[s]]]
+        l0 = [(s*pts["rate"][i][m] - pts["dist"][i][m])/s,0]
+        l1 = [0,pts["dist"][i][m] - s*pts["rate"][i][m]]
         count = 0
-        for i in range(0, len(pts["dist"][s])):
-            py = pts["dist"][s][i]
-            px = pts["rate"][s][i]
+        for n in range(0, len(pts["dist"][i])):
+            py = pts["dist"][i][n]
+            px = pts["rate"][i][n]
             crss = (l1[0] - l0[0])*(py - l0[1]) - (px - l0[0])*(l1[1] - l0[1])
             if crss > 0.1:
-                mins[s] = i
+                m = n
                 count += 1
-    return mins[s]
+    return m
 
 def run(ti, tn, tv):
     """
@@ -85,10 +88,10 @@ def run(ti, tn, tv):
     shot_index = 0
     for shot in sorted(os.listdir(config["DIR"]["REF_PATH"])): #for each shot
         for n_crf, val_crf in enumerate(t_pts["crf"]): #for each init crf
-            if ti == 0:
-                out = global_.encode(shot, shot_index, val_crf) #encoding
-                global_.assess(shot, out) #quality assessment
-                global_.store_results(shot_index, int(val_crf), out)
+            if ti == 0 and global_.new_enc:
+                path = global_.encode(shot, shot_index, val_crf) #encoding
+                global_.assess(shot, path) #quality assessment
+                global_.set_results(shot_index, int(val_crf), path)
             #store results in t_pts dictionary, weighted by duration
             r = global_.data["shots"][shot_index]["assessment"]["rate"][val_crf]
             d = 100 - global_.data["shots"][shot_index]["assessment"]["dist"][val_crf]
@@ -105,17 +108,20 @@ def run(ti, tn, tv):
     t_ext["l"] = [t_rate[-1], t_dist[-1]] #last element, crfs 51
     t_ext["r"] = [t_rate[0], t_dist[0]] #first element, crfs 0
     t_ext["slope"] = compute_slope(t_ext["l"][0],t_ext["l"][1],t_ext["r"][0],t_ext["r"][1])
-            
+    
     #when new solution is the same as the past one
-    while not (curr_opt["r"] == prev_opt["r"]).all() or not (curr_opt["l"] == prev_opt["l"]).all():
+    while not all(curr_opt["r"] == prev_opt["r"]) or not all(curr_opt["l"] == prev_opt["l"]):
         prev_opt = curr_opt.copy() #keep track of the previous optimal combination
         diffs = abs(s_slopes - t_ext["slope"]) #difference between all and current slope
         s_mins = np.argmin(diffs, axis=1) #find the min difference
-        for shot in range(0,global_.num_shots):
-            s_curr = check_side(shot, t_pts, s_mins, -t_ext["slope"])
-            s_pts["crf"][shot] = t_pts["crf"][s_curr]
-            s_pts["rate"][shot] = t_pts["rate"][shot][s_curr]
-            s_pts["dist"][shot] = t_pts["dist"][shot][s_curr]
+        for shot_index in range(0,global_.num_shots):
+            if np.einsum('i->',s_slopes[shot_index]) != 0: #handle 0 slope shots ex. short black screen
+                s_curr = check_side(shot_index, t_pts, s_mins[shot_index], -t_ext["slope"])
+            else:
+                s_curr = -1
+            s_pts["crf"][shot_index] = t_pts["crf"][s_curr]
+            s_pts["rate"][shot_index] = t_pts["rate"][shot_index][s_curr]
+            s_pts["dist"][shot_index] = t_pts["dist"][shot_index][s_curr]
         t_rate = np.einsum('i->',s_pts["rate"]) #sum rate results per crf
         t_dist = np.einsum('i->',s_pts["dist"]) #sum dist results per crf
         if np.einsum('i->',s_pts[tn]) > tv: #if current opt go beyond the target
@@ -133,7 +139,7 @@ def run(ti, tn, tv):
                 t_ext["l"] = [t_rate, t_dist]
                 curr_opt["l"] = s_pts["crf"].copy()
         t_ext["slope"] = compute_slope(t_ext["l"][0],t_ext["l"][1],t_ext["r"][0],t_ext["r"][1])
-                
+    
     if tn == "dist":
         return curr_opt["r"]
     elif tn == "rate":

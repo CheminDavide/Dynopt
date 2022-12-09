@@ -1,17 +1,17 @@
 {
     "ENC": {
         "CODEC": "avc",
-        "WIDTH": 1280,
-        "HEIGHT": 720,
-        "FPS": 24,
+        "WIDTH": 480,
+        "HEIGHT": 270,
+        "FPS": 29.97,
         "CRF_RANGE": [10,40],
-        "NUM_INTERVALS": 15
+        "NUM_PTS": 31
         },
     "OPT": {
-        "DIST_TARGETS": [60,70,80,85,90,93,96,98],
-        "RATE_TARGETS": [500000,800000,1000000,1300000,1600000,2000000,2500000,3000000],
+        "DIST_TARGETS": [90],
+        "RATE_TARGETS": [1000000],
         "DIST_METRIC": "vmaf",
-        "OPT_METHOD": "lg",
+        "OPT_METHOD": "fx",
         "SHOT_DETECT_TH": 0.25
         },
     "DIR": {
@@ -22,5 +22,9 @@
         "TIME_LOGS": "shot_detection.log",
         "OUT_LIST": "shot_list.txt",
         "OUT_PATH": "tests_vids/OPT_vids/"
+        },
+    "DEBUG": {
+        "ENC": false,
+        "MUX": false
         }
 }

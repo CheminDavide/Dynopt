@@ -25,7 +25,6 @@ def combine(sc, tn, tv):
         xf, xg, yf, yg = 0, -1, 100, 1
     tmp = 0
     for comb in itertools.product(*sc): #for each combination
-        print("--comb "+str(tmp))
         tmp += 1
         x = y = 0
         for i,val in enumerate(comb):
@@ -37,7 +36,6 @@ def combine(sc, tn, tv):
             y_min = y
             o = list(comb)
             x_min = x
-            print("--min "+str(0))
     if not o:
         o = list(comb)
     return o
@@ -62,7 +60,7 @@ def run(ti, tn, tv):
     s_crfs = np.zeros((global_.num_shots, len(global_.npts)), dtype=int) #init structure
     for shot in sorted(os.listdir(config["DIR"]["REF_PATH"])): #for each shot
         for curr_crf in global_.npts:
-            if ti == 0 and global_.new_enc:
+            if ti == 0 and config["DEBUG"]["ENC"]:
                 path = global_.encode(shot, shot_index, curr_crf) #encoding
                 global_.assess(shot, path) #quality assessment
                 global_.set_results(shot_index, int(curr_crf), path)

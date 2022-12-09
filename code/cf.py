@@ -76,11 +76,13 @@ def run(ti, tn, tv):
     - out : np.array(num_shots)
         List of optimal CRFs for each shot
     """
-    curr_opt = {"l": np.zeros(global_.num_shots), "r": np.zeros(global_.num_shots)} #new optimal inteval bounds
-    prev_opt = {"l": np.ones(global_.num_shots), "r": np.ones(global_.num_shots)} #previous optimal inteval bounds
+    curr_opt = {"l": np.zeros(global_.num_shots, dtype=int), \
+                "r": np.zeros(global_.num_shots, dtype=int)} #new optimal interval bounds
+    prev_opt = {"l": np.ones(global_.num_shots, dtype=int), \
+                "r": np.ones(global_.num_shots, dtype=int)} #previous optimal interval bounds
     t_ext = {"l": [], "r": [], "slope": 0.0} #general slope
-    init_pts = {"rate": np.zeros((global_.num_shots, config["ENC"]["NUM_INTERVALS"])), \
-            "dist": np.zeros((global_.num_shots, config["ENC"]["NUM_INTERVALS"]))} #info encoded shots
+    init_pts = {"rate": np.zeros((global_.num_shots, config["ENC"]["NUM_PTS"])), \
+            "dist": np.zeros((global_.num_shots, config["ENC"]["NUM_PTS"]))} #info encoded shots
     t_pts = {"crf": np.arange(config["ENC"]["CRF_RANGE"][1],config["ENC"]["CRF_RANGE"][0]-1,-1,dtype=int), \
             "rate": np.zeros((global_.num_shots, config["ENC"]["CRF_RANGE"][1]-config["ENC"]["CRF_RANGE"][0]+1)), \
             "dist": np.zeros((global_.num_shots, config["ENC"]["CRF_RANGE"][1]-config["ENC"]["CRF_RANGE"][0]+1))}
@@ -92,7 +94,7 @@ def run(ti, tn, tv):
     shot_index = 0
     for shot in sorted(os.listdir(config["DIR"]["REF_PATH"])): #for each shot
         for n_crf, val_crf in enumerate(global_.npts): #for each init crf
-            if ti == 0 and global_.new_enc:
+            if ti == 0 and config["DEBUG"]["ENC"]:
                 path = global_.encode(shot, shot_index, val_crf) #encoding
                 global_.assess(shot, path) #quality assessment
                 global_.set_results(shot_index, int(val_crf), path)
@@ -104,16 +106,16 @@ def run(ti, tn, tv):
         par, cov = curve_fit(eq_fit, init_pts["rate"][shot_index], init_pts["dist"][shot_index], bounds=(0,np.inf))
         x = np.flip(init_pts["rate"][shot_index])
         #t_pts["rate"][shot_index] = np.append(np.concatenate([np.linspace(x[i],x[i+1], \
-        #num=global_.npts[i+1]-global_.npts[i],endpoint=False) for i in range(config["ENC"]["NUM_INTERVALS"]-1)]),x[-1])
+        #num=global_.npts[i+1]-global_.npts[i],endpoint=False) for i in range(config["ENC"]["NUM_PTS"]-1)]),x[-1])
         t_pts["rate"][shot_index] = np.append(np.concatenate([expand(np.flip(init_pts["rate"][shot_index]),i,par) \
-                                                              for i in range(config["ENC"]["NUM_INTERVALS"]-1)]),x[-1])
+                                                              for i in range(config["ENC"]["NUM_PTS"]-1)]),x[-1])
         t_pts["dist"][shot_index] = eq_fit(t_pts["rate"][shot_index], *par)
         t_tan[shot_index] = eq_slope(t_pts["rate"][shot_index], par[0])
         shot_index += 1
     t_rate = np.einsum('ij->j',t_pts["rate"]) #sum rate results per crf
     t_dist = np.einsum('ij->j',t_pts["dist"]) #sum dist results per crf
-    t_ext["l"] = [t_rate[-1], t_dist[-1]] #last element, highest crfs ex.51
-    t_ext["r"] = [t_rate[0], t_dist[0]] #first element, lowest crfs ex.0
+    t_ext["l"] = [t_rate[0], t_dist[0]] #last element, highest crfs ex.51
+    t_ext["r"] = [t_rate[-1], t_dist[-1]] #first element, lowest crfs ex.0
     t_ext["slope"] = compute_slope(t_ext["l"][0],t_ext["l"][1],t_ext["r"][0],t_ext["r"][1])
     
     #when new solution is the same as the past one

@@ -6,10 +6,6 @@ num_shots = 0
 duration = 0.0
 npts = []
 
-new_enc = True
-
-add_info = ""
-lib = ""
 s_cod = {}
 data = {}
 
@@ -28,18 +24,11 @@ def encode(s,i,c):
     - o : string
         Encoded file path
     """
-    ref_path = config["DIR"]["REF_PATH"]
-    width = config["ENC"]["WIDTH"]
-    height = config["ENC"]["HEIGHT"]
-    fps = config["ENC"]["FPS"]
-    
-    add_info = s_cod["add_param"]
-    lib = s_cod["lib"]
-    
     o = config["DIR"]["DIST_PATH"] + str(i) + "/" + str(c) + "_" \
         + config["ENC"]["CODEC"].upper() + "." + s_cod["container"]
-    enc = f"ffmpeg -f rawvideo -video_size {width}x{height} -r {fps} -pixel_format yuv420p \
-        -i {ref_path + s} -c:v {lib} -crf {c} {add_info} {o} -hide_banner -loglevel error"
+    enc = f"ffmpeg -f rawvideo -video_size {config['ENC']['WIDTH']}x{config['ENC']['HEIGHT']} \
+        -r {config['ENC']['FPS']} -pixel_format yuv420p -i {config['DIR']['REF_PATH'] + s} \
+        -c:v {s_cod['lib']} -crf {c} {s_cod['add_param']} {o} -hide_banner -loglevel error"
     subprocess.call(enc, shell=True)
     print("-encode: " + o)
     return o
@@ -54,16 +43,11 @@ def assess(s,f):
     - f : string
         Video to assess
     """
-    ref_path = config["DIR"]["REF_PATH"]
-    width = config["ENC"]["WIDTH"]
-    height = config["ENC"]["HEIGHT"]
-    fps = config["ENC"]["FPS"]
     vmaf_log = "config/" + config["DIR"]["VMAF_LOGS"]
-    
-    c_vmaf = f"ffmpeg -f rawvideo -r {fps} -video_size {width}x{height} \
-            -i {ref_path+ s} -i {f} -hide_banner -loglevel error\
+    c_vmaf = f"ffmpeg -f rawvideo -r {config['ENC']['FPS']} -video_size {config['ENC']['WIDTH']}x{config['ENC']['HEIGHT']} \
+            -i {config['DIR']['REF_PATH'] + s} -i {f} -hide_banner -loglevel error\
             -lavfi \"[0:v]setpts=PTS-STARTPTS[ref];\
-                    [1:v]scale={width}x{height}:flags=bicubic, setpts=PTS-STARTPTS[dist];\
+                    [1:v]scale={config['ENC']['WIDTH']}x{config['ENC']['HEIGHT']}:flags=bicubic, setpts=PTS-STARTPTS[dist];\
                     [dist][ref]libvmaf=feature=name=psnr:log_path={vmaf_log}:log_fmt=json\" \
             -f null -"
     subprocess.call(c_vmaf, shell=True)

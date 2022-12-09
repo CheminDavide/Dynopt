@@ -74,21 +74,23 @@ def run(ti, tn, tv):
     - out : np.array(num_shots)
         List of optimal CRFs for each shot
     """
-    curr_opt = {"l": np.zeros(global_.num_shots), "r": np.zeros(global_.num_shots)} #new optimal inteval bounds
-    prev_opt = {"l": np.ones(global_.num_shots), "r": np.ones(global_.num_shots)} #previous optimal inteval bounds
+    curr_opt = {"l": np.zeros(global_.num_shots, dtype=int), \
+                "r": np.zeros(global_.num_shots, dtype=int)} #new optimal inteval bounds
+    prev_opt = {"l": np.ones(global_.num_shots, dtype=int), \
+                "r": np.ones(global_.num_shots, dtype=int)} #previous optimal inteval bounds
     s_pts = {"crf": np.zeros(global_.num_shots, dtype=int), \
             "rate": np.zeros(global_.num_shots), \
             "dist": np.zeros(global_.num_shots)} #info current optimal combination
     t_ext = {"l": [], "r": [], "slope": 0.0} #general slope
     t_pts = {"crf": global_.npts, \
-            "rate": np.zeros((global_.num_shots, config["ENC"]["NUM_INTERVALS"])), \
-            "dist": np.zeros((global_.num_shots, config["ENC"]["NUM_INTERVALS"]))} #info encoded shots
-    s_slopes = np.zeros((global_.num_shots, config["ENC"]["NUM_INTERVALS"] - 1)) #single slopes
+            "rate": np.zeros((global_.num_shots, config["ENC"]["NUM_PTS"])), \
+            "dist": np.zeros((global_.num_shots, config["ENC"]["NUM_PTS"]))} #info encoded shots
+    s_slopes = np.zeros((global_.num_shots, config["ENC"]["NUM_PTS"] - 1)) #single slopes
     
     shot_index = 0
     for shot in sorted(os.listdir(config["DIR"]["REF_PATH"])): #for each shot
         for n_crf, val_crf in enumerate(t_pts["crf"]): #for each init crf
-            if ti == 0 and global_.new_enc:
+            if ti == 0 and config["DEBUG"]["ENC"]:
                 path = global_.encode(shot, shot_index, val_crf) #encoding
                 global_.assess(shot, path) #quality assessment
                 global_.set_results(shot_index, int(val_crf), path)
@@ -97,7 +99,7 @@ def run(ti, tn, tv):
             d = 100 - global_.data["shots"][shot_index]["assessment"]["dist"][val_crf]
             t_pts["rate"][shot_index][n_crf] = r * global_.data["shots"][shot_index]["duration"] / global_.duration
             t_pts["dist"][shot_index][n_crf] = d * global_.data["shots"][shot_index]["duration"] / global_.duration
-        for n_crf in range(1,config["ENC"]["NUM_INTERVALS"]): #compute and store slope between all close points
+        for n_crf in range(1,config["ENC"]["NUM_PTS"]): #compute and store slope between all close points
             s_slopes[shot_index][n_crf-1] = compute_slope(t_pts["rate"][shot_index][n_crf],\
                                                           t_pts["dist"][shot_index][n_crf],\
                                                           t_pts["rate"][shot_index][n_crf-1],\

@@ -25,18 +25,15 @@ Your system must have installed also:
     - libvpx VP9 video encoder
     - libvmaf VMAF library
 
-Execute the code from your working directory to run main.py inside the installed environment:
+Before executing the code always remember to run it inside of the installed virtual environment.
 ```bash
 #when the environment is installed but not active
 source env/bin/activate
-
-#run code
-python3 code/main.py
 ```
 
 ## Usage
 
-#### 1. Before running the code, configure settings in `config/config.json`
+#### 1. Before running the code, configure settings in [config.json](config/config.json)
 
 * These are the encoding variables you can configure:
     * `"CODEC" [string]` : output codec
@@ -49,8 +46,8 @@ python3 code/main.py
         - ex.29.97
     * `"CRF_RANGE" [list(2)]` : CRF encoding range
         - ex.[10,40]
-    * `"NUM_INTERVALS" [int]` : number of CRF or points per interval, more for more precision
-        - ex.10 the interval [10,40] is splitted into 10 intervals (N+1 CRF points)
+    * `"NUM_PTS" [int]` : number of encodings or points per shot, more for more precision
+        - ex.10 in the interval [10,40]
 
 * These are the optimization settings you can configure
     * `"DIST_TARGETS [list(N)]"` : list of quality targets
@@ -60,28 +57,42 @@ python3 code/main.py
     * `"DIST_METRIC" [string]` : quality metric
         - values "vmaf" !!not implemented: "psnr","ssim", "mssim"
     * `"OPT_METHOD" [string]` : optimization method
-        - values: #bf = brute force, lg = lagrange, cf = curve fitting
+        - values: fx = fixed CRF, bf = brute force, lg = lagrange, cf = curve fitting
     * `"SHOT_DETECT_TH" [float]` : shot detection threshold
         - ex.0.25
         
 * In the DIR section you can also change directories and files paths.
+
+* Debug settings:
+    * `"ENC" [boolean]` : do not encode shots, proceed only with computations
+        - False when you have all the shots already encoded and assessed
+    * `"MUX" [boolean]` : do not create the final optimized version
+        - False when no video output is needed
 
 #### 2. Run the main script:
 ```bash
 python3 code/main.py
 ```
 
-#### 3. Select from the dialogue box the raw video to input.
-Results will be displayed in the console. Optimal encoded videos are stored in the specified folder.
+#### 3. Select from the dialogue box the video to input.
+Supported formats:
+    * `.yuv`: raw video
+    * `.y4m`: raw video
+The support of any other input format and codec, like `.mp4` or `AVC`, depends on ffmpeg installation.
+
+#### 4. Output
+Results will be displayed in the console.
+Optimal encoded videos are stored in the specified folder.
 
 ## Directory tree
 ```bash
 __code/
-____ main.py
 ____ bf.py #brute force code
-____ lg.py #lagrange method
 ____ cf.py #curve fitting implementation
+____ fx.py #brute force code
 ____ global_.py #global variables and methods
+____ lg.py #lagrange method
+____ main.py
 
 __config/
 ____ config.json #config file
@@ -92,7 +103,7 @@ ____ vmaf_logs.json #VMAF library results
 
 __env/ #virtual environment with required modules
 
-__tests_rd/ #json files to store CRF, distortion and rate values for later uses
+__tests_rd/ #plots and json files to store CRF, distortion and rate values for later uses
 
 __tests_vids/ #raw input files, temporary encoded shots, optimized output videos
 ```

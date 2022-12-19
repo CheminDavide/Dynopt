@@ -76,8 +76,9 @@ python3 code/main.py
 
 #### 3. Select from the dialogue box the video to input.
 Supported formats:
-    * `.yuv`: raw video
-    * `.y4m`: raw video
+* `.yuv`: raw video
+* `.y4m`: raw video
+
 The support of any other input format and codec, like `.mp4` or `AVC`, depends on ffmpeg installation.
 
 #### 4. Output

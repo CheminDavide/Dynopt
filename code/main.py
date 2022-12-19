@@ -32,10 +32,10 @@ with open("config/config.json", 'r') as f:
     config = json.load(f)
     
 #encoding paramethers
-PARAM_AVC = {"crfs": 52, "opr_range": config["ENC"]["CRF_RANGE"], "lib": "libx264", "container": "mp4", "add_param": ""}
-PARAM_HEVC = {"crfs": 52, "opr_range": config["ENC"]["CRF_RANGE"], "lib": "libx265", "container": "mp4", "add_param": ""}
-PARAM_VP9 = {"crfs": 64, "opr_range": config["ENC"]["CRF_RANGE"], "lib": "libvpx-vp9", "container": "webm", "add_param": "-b:v 0"} 
-target_list = {"dist": config["OPT"]["DIST_TARGETS"], "rate": config["OPT"]["RATE_TARGETS"]}
+PARAM_AVC = {"crfs": 52, "opr_range": [0,51], "lib": "libx264", "container": "mp4", "add_param": ""}
+PARAM_HEVC = {"crfs": 52, "opr_range": [0,51], "lib": "libx265", "container": "mp4", "add_param": ""}
+PARAM_VP9 = {"crfs": 64, "opr_range": [0,63], "lib": "libvpx-vp9", "container": "webm", "add_param": "-b:v 0"} 
+target_list = {"dist": config["OPT"]["DIST_TARGETS"], "rate": (np.array(config["OPT"]["RATE_TARGETS"])*1000).tolist()}
 
 #input file
 root = tk.Tk()
@@ -79,7 +79,7 @@ def shot_change_detection(p):
 
     Input:
     - p : string
-        File
+        File path
     Output:
     - n : int
         Number of scenes
@@ -103,8 +103,12 @@ def shot_change_detection(p):
         
         #cut the video
         end_t = l.split("pts_time:",1)[1]
-        cut = f"ffmpeg -ss {start_t} -to {end_t} -i {p} -hide_banner -loglevel error\
+        if p.endswith(".yuv") or p.endswith(".y4m"):
+            cut = f"ffmpeg -ss {start_t} -to {end_t} -i {p} -hide_banner -loglevel error\
             -pix_fmt yuv420p {config['DIR']['REF_PATH']}scene{str(i).zfill(7)}.yuv"
+        else:
+            cut = f"ffmpeg -ss {start_t} -to {end_t} -i {p} -hide_banner -loglevel error\
+            -c copy -copyts {config['DIR']['REF_PATH']}scene{str(i).zfill(7)+p[-4:]}"
         subprocess.call(cut, shell=True)
         start_t = end_t
     print("-analyse: " + str(i+1) + " detected shots")
@@ -157,7 +161,10 @@ def mux(t_i, t_n, t_v):
     if t_n == "dist":
         t_n = config["OPT"]["DIST_METRIC"]
         if config["OPT"]["DIST_METRIC"] == "vmaf":
-            t_v = 100 - t_v
+            out_name = str(100 - t_v).zfill(len(str(target_list[t_name][-1])))
+    elif t_n == "rate":
+        out_name = str(int(t_v / 1000)).zfill(len(str(target_list[t_name][-1])) - 3)
+    
     file_list = "" #list of encoded vids to be stored in OUT_LIST
     with open(rd_file, 'r') as f:
         global_.data = json.load(f)
@@ -167,7 +174,7 @@ def mux(t_i, t_n, t_v):
         + str(opt_crf) + "_" + config["ENC"]["CODEC"].upper() + "." + global_.s_cod["container"] + "' \n"
     with open("config/" + config["DIR"]["OUT_LIST"], 'w') as w:
         w.write(file_list)
-    o = config["DIR"]["OUT_PATH"] + source_name[:9] + "_" + t_n + str(t_v).zfill(len(str(target_list[t_name][-1]))) \
+    o = config["DIR"]["OUT_PATH"] + source_name[:9] + "_" + t_n + out_name \
         + config["OPT"]["OPT_METHOD"] + "_" + config["ENC"]["CODEC"].upper() + "." + global_.s_cod["container"]
     mux = f"ffmpeg -f concat -safe 0 -i {'config/' + config['DIR']['OUT_LIST']} -c copy {o} -hide_banner -loglevel error"
     print("-mux: " + o)
@@ -183,8 +190,7 @@ if source_path.endswith(".yuv"):
 elif source_path.endswith(".y4m"):
     print("-input: y4m")
 else:
-    print("ERROR: not an input type")
-    sys.exit()
+    print("-input: not rawvideo")
     
 #init values based on the selected output codec
 if config["ENC"]["CODEC"] == "avc":
@@ -200,11 +206,16 @@ else:
     print("ERROR: not a codec")
     sys.exit()
 
-if config["ENC"]["NUM_PTS"] > global_.s_cod["opr_range"][1] - global_.s_cod["opr_range"][0] + 1:
+#init checks
+if config["ENC"]["NUM_PTS"] > config["ENC"]["CRF_RANGE"][1] - config["ENC"]["CRF_RANGE"][0] + 1:
     print("ERROR: too many encodings")
     sys.exit()
-if global_.s_cod["opr_range"][0] > global_.s_cod["opr_range"][1]:
+if config["ENC"]["CRF_RANGE"][0] > config["ENC"]["CRF_RANGE"][1]:
     print("ERROR: wrong CRF range")
+    sys.exit()
+if config["ENC"]["CRF_RANGE"][0] < global_.s_cod["opr_range"][0] or \
+   config["ENC"]["CRF_RANGE"][1] > global_.s_cod["opr_range"][1]:
+    print("ERROR: CRF out of range")
     sys.exit()
     
 #get the total duration for the last cut
@@ -274,7 +285,7 @@ target_index = 0
 for t_name in target_list:
     for t_val in target_list[t_name]:
         
-        global_.npts = interval(global_.s_cod["opr_range"], config["ENC"]["NUM_PTS"]).tolist()
+        global_.npts = interval(config["ENC"]["CRF_RANGE"], config["ENC"]["NUM_PTS"]).tolist()
         
         if config["OPT"]["OPT_METHOD"] == "fx": #brute force approach
             opt = fx.run(target_index, t_name, t_val)
@@ -291,10 +302,10 @@ for t_name in target_list:
         elif config["OPT"]["OPT_METHOD"] == "cf": #curve fitting
             opt = cf.run(target_index, t_name, t_val)
             print("-out: crfs " + str(opt))
-            print("-encode: encoding in-between points...")
             #TODO: add comment
             if config["DEBUG"]["MUX"]:
                 global_.s_cod["add_param"] = global_.s_cod["add_param"] + " -n"
+                print("-encode: encoding in-between points...")
                 shot_index = 0
                 for shot in sorted(os.listdir(config["DIR"]["REF_PATH"])): #for each shot
                     if not np.any(global_.npts == opt[shot_index]):
@@ -304,11 +315,10 @@ for t_name in target_list:
         else:
             print("ERROR: not an opt method")
             sys.exit()
-        
-        for i in range(0,global_.num_shots): #save the opt crf for each shot
-            save_opt(i, target_index, opt[i])
 
         if config["DEBUG"]["MUX"]:
+            for i in range(0,global_.num_shots): #save the opt crf for each shot
+                save_opt(i, target_index, opt[i])
             mux(target_index, t_name, t_val)
         
         target_index += 1

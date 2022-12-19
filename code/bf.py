@@ -15,14 +15,15 @@ def combine(sc, tn, tv):
         Best CRF combination for the current target
     """
     o = []
-    if tn == "dist":
-        y_min = math.inf
-        to_min = "rate"
-        xf, xg, yf, yg = 100, 1, 0, -1
-    elif tn == "rate":
+    if tn == "rate":
         y_min = 100
         to_min = "dist"
         xf, xg, yf, yg = 0, -1, 100, 1
+    elif tn == "dist":
+        y_min = math.inf
+        to_min = "rate"
+        xf, xg, yf, yg = 100, 1, 0, -1
+    print("-combine: comparing " + str(np.shape(sc)[1]**np.shape(sc)[0]) + " options...")
     tmp = 0
     for comb in itertools.product(*sc): #for each combination
         tmp += 1
@@ -37,7 +38,12 @@ def combine(sc, tn, tv):
             o = list(comb)
             x_min = x
     if not o:
-        o = list(comb)
+        if tn == "rate":
+            print("no encodings satisfy the target - encoding at min quality")
+            o = list(comb)
+        elif tn == "dist":
+            print("no encodings satisfy the target - encoding at max quality")
+            o = np.zeros(global_.num_shots,dtype=int) + config["ENC"]["CRF_RANGE"][0]
     return o
 
 def run(ti, tn, tv):

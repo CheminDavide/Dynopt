@@ -49,13 +49,12 @@ def run(ti, tn, tv):
         curr_crf = global_.npts[crf_index]
         crf_index -= 1
     
-    #if target is below min CRF metric value
-    if crf_index == len(global_.npts) - 1:
+    if crf_index == len(global_.npts) - 1: #if target is below min CRF metric value
         print("no encodings satisfy the target - encoding at min CRF")
-    
-    #if target is above max CRF or if target is quality
-    if crf_index == 0 or tn == "dist":
-        curr_crf -= 1
+    elif crf_index == 0: #if target is above max CRF
+        print("no encodings satisfy the target - encoding at max CRF")
+    elif tn == "dist":
+        crf_index -= 1
         
     return np.zeros(global_.num_shots) + curr_crf
 

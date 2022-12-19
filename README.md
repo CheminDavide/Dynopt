@@ -35,7 +35,7 @@ source env/bin/activate
 
 #### 1. Before running the code, configure settings in [config.json](config/config.json)
 
-* These are the encoding variables you can configure:
+* Encoding variables:
     * `"CODEC" [string]` : output codec
         - values: "avc", "hevc", "vp9", !!not implemented: "av1", "vvc"
     * `"WIDTH" [int]` : input and output width
@@ -49,7 +49,7 @@ source env/bin/activate
     * `"NUM_PTS" [int]` : number of encodings or points per shot, more for more precision
         - ex.10 in the interval [10,40]
 
-* These are the optimization settings you can configure
+* Optimization and target settings:
     * `"DIST_TARGETS [list(N)]"` : list of quality targets
         - ex.[75,90] - a value between 0 and 100 in case of VMAF, also empty
     * `"RATE_TARGETS" [list(N)]` : list of bitrate targets
@@ -61,7 +61,7 @@ source env/bin/activate
     * `"SHOT_DETECT_TH" [float]` : shot detection threshold
         - ex.0.25
         
-* In the DIR section you can also change directories and files paths.
+* Directories and files paths.
 
 * Debug settings:
     * `"ENC" [boolean]` : do not encode shots, proceed only with computations

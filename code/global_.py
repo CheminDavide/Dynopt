@@ -1,13 +1,14 @@
 import subprocess #to access ffmpeg in the system
 import json #to handle json files
+import random #to generate random numbers
 
-#TODO add comments
-num_shots = 0
-duration = 0.0
-npts = []
-
-s_cod = {}
-data = {}
+#global variables init
+num_shots = 0 #number of shots, from shot detection method
+duration = 0.0 #sequence duration
+npts = [] #crf values to encode, from interval method
+id_exe = str(random.randint(100000,999999)) #execution unique id
+s_cod = {} #coding parameters selection
+data = {} #RD values and info from json results file
 
 def encode(s,i,c):
     """
@@ -47,7 +48,6 @@ def assess(s,f):
     - f : string
         [dist] Video to assess
     """
-    vmaf_log = "config/" + config["DIR"]["VMAF_LOGS"]
     if s.endswith(".yuv") or s.endswith(".y4m"):
         t = f"-f rawvideo -r {config['ENC']['FPS']} -video_size {config['ENC']['WIDTH']}x{config['ENC']['HEIGHT']} "
     else:
@@ -55,7 +55,7 @@ def assess(s,f):
     c_vmaf = f"ffmpeg {t}-i {config['DIR']['REF_PATH'] + s} -i {f} -hide_banner -loglevel error\
             -lavfi \"[0:v]setpts=PTS-STARTPTS[ref];\
                     [1:v]scale={config['ENC']['WIDTH']}x{config['ENC']['HEIGHT']}:flags=bicubic, setpts=PTS-STARTPTS[dist];\
-                    [dist][ref]libvmaf=feature=name=psnr:log_path={vmaf_log}:log_fmt=json\" \
+                    [dist][ref]libvmaf=feature=name=psnr:log_path=config/tmp_vmaf_log_{id_exe}.json:log_fmt=json\" \
             -f null -"
     subprocess.call(c_vmaf, shell=True)
 
@@ -71,7 +71,7 @@ def set_results(i,c,f):
     - f : string
         Evaluated file
     """
-    with open("config/" + config["DIR"]["VMAF_LOGS"], 'r') as r: #extract quality and rate values
+    with open("config/tmp_vmaf_log_" + id_exe + ".json", 'r') as r: #extract quality and rate values
         i_data = json.load(r)
     data["shots"][i]["assessment"]["crf"][c] = c
     data["shots"][i]["assessment"]["dist"][c] = i_data["pooled_metrics"]["vmaf"]["mean"]

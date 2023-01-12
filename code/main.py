@@ -33,7 +33,7 @@ with open("config/config.json", 'r') as f:
     
 #encoding paramethers
 PARAM_AVC = {"crfs": 52, "opr_range": [0,51], "lib": "libx264", "container": "mp4", "add_param": ""}
-PARAM_HEVC = {"crfs": 52, "opr_range": [0,51], "lib": "libx265", "container": "mp4", "add_param": ""}
+PARAM_HEVC = {"crfs": 52, "opr_range": [0,51], "lib": "libx265", "container": "mp4", "add_param": "-x265-params log-level=none"}
 PARAM_VP9 = {"crfs": 64, "opr_range": [0,63], "lib": "libvpx-vp9", "container": "webm", "add_param": "-b:v 0"} 
 target_list = {"dist": config["OPT"]["DIST_TARGETS"], "rate": (np.array(config["OPT"]["RATE_TARGETS"])*1000).tolist()}
 
@@ -85,7 +85,9 @@ def shot_change_detection(p):
         Number of scenes
     """
     print("-analyse: detecting shots...")
-    TIME_LOGS = "config/" + config["DIR"]["TIME_LOGS"]
+    TIME_LOGS = "config/tmp_shot_dect_" + global_.id_exe + ".log"
+    with open(TIME_LOGS, 'w') as f: #create times log file
+        pass
     start_t = end_t = 0.0
     #return when the shot changes
     det = f"ffmpeg -i {p} -hide_banner -loglevel error -filter_complex:v \
@@ -165,18 +167,19 @@ def mux(t_i, t_n, t_v):
     elif t_n == "rate":
         out_name = str(int(t_v / 1000)).zfill(len(str(target_list[t_name][-1])) - 3)
     
-    file_list = "" #list of encoded vids to be stored in OUT_LIST
+    file_list = "" #list of encoded vids to be stored in shot_list file
     with open(rd_file, 'r') as f:
         global_.data = json.load(f)
     for shot in range(0,global_.num_shots):
         opt_crf = global_.data["shots"][shot]["opt_points"][t_i]["crf"]
         file_list = file_list + "file '../" + config["DIR"]["DIST_PATH"] + str(shot) + "/" \
         + str(opt_crf) + "_" + config["ENC"]["CODEC"].upper() + "." + global_.s_cod["container"] + "' \n"
-    with open("config/" + config["DIR"]["OUT_LIST"], 'w') as w:
+    with open("config/tmp_shot_list_" + global_.id_exe + ".txt", 'w') as w:
         w.write(file_list)
     o = config["DIR"]["OUT_PATH"] + source_name[:9] + "_" + t_n + out_name \
         + config["OPT"]["OPT_METHOD"] + "_" + config["ENC"]["CODEC"].upper() + "." + global_.s_cod["container"]
-    mux = f"ffmpeg -f concat -safe 0 -i {'config/' + config['DIR']['OUT_LIST']} -c copy {o} -hide_banner -loglevel error"
+    mux = f"ffmpeg -f concat -safe 0 -i {'config/tmp_shot_list_' + global_.id_exe + '.txt'} \
+        -c copy {o} -hide_banner -loglevel error"
     print("-mux: " + o)
     subprocess.call(mux, shell=True)
     
@@ -184,6 +187,9 @@ def mux(t_i, t_n, t_v):
 # -----------------------------------------------------------------------------
 #                       Init and shot detection
 # -----------------------------------------------------------------------------
+
+#init folders and files check
+#if not os.path.isfile(rd_file):
 
 if source_path.endswith(".yuv"):
     print("-input: yuv")
@@ -302,14 +308,13 @@ for t_name in target_list:
         elif config["OPT"]["OPT_METHOD"] == "cf": #curve fitting
             opt = cf.run(target_index, t_name, t_val)
             print("-out: crfs " + str(opt))
-            #TODO: add comment
             if config["DEBUG"]["MUX"]:
+                #do not override, skip the encoding instead, if the file already exists
                 global_.s_cod["add_param"] = global_.s_cod["add_param"] + " -n"
                 print("-encode: encoding in-between points...")
                 shot_index = 0
                 for shot in sorted(os.listdir(config["DIR"]["REF_PATH"])): #for each shot
-                    if not np.any(global_.npts == opt[shot_index]):
-                        out = global_.encode(shot, shot_index, opt[shot_index]) #encoding
+                    out = global_.encode(shot, shot_index, opt[shot_index]) #encoding
                     shot_index += 1
                 
         else:
@@ -322,3 +327,8 @@ for t_name in target_list:
             mux(target_index, t_name, t_val)
         
         target_index += 1
+
+if config["DEBUG"]["DEL"]: #delete temp files
+    os.remove("config/tmp_shot_dect_" + global_.id_exe + ".log")
+    os.remove("config/tmp_vmaf_log_" + global_.id_exe + ".json")
+    os.remove("config/tmp_shot_list_" + global_.id_exe + ".txt")

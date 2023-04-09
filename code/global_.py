@@ -3,20 +3,21 @@ import json #to handle json files
 import random #to generate random numbers
 
 #global variables init
+source_path = ""
+shot_list = [] #shot time bounds
 num_shots = 0 #number of shots, from shot detection method
 duration = 0.0 #sequence duration
 npts = [] #crf values to encode, from interval method
 id_exe = str(random.randint(100000,999999)) #execution unique id
 s_cod = {} #coding parameters selection
 data = {} #RD values and info from json results file
+dist_max_val = 0 #maximum value of the quality metric
 
-def encode(s,i,c):
+def encode(i,c):
     """
     Encode the input video file according to coding options
 
     Input:
-    - s : string
-        Source file name
     - i : int
         Shot index
     - c : int
@@ -25,38 +26,50 @@ def encode(s,i,c):
     - o : string
         Encoded file path
     """
+    start_t = 0.0
+    if i != 0:
+        start_t = shot_list[i-1].split("pts_time:",1)[1]
+    end_t = shot_list[i].split("pts_time:",1)[1]
+    
     o = config["DIR"]["DIST_PATH"] + str(i) + "/" + str(c) + "_" \
         + config["ENC"]["CODEC"].upper() + "." + s_cod["container"]
-    if s.endswith(".yuv") or s.endswith(".y4m"):
+    print("-encoding: " + o)
+    if source_path.endswith(".yuv"):
         t = f"-f rawvideo -video_size {config['ENC']['WIDTH']}x{config['ENC']['HEIGHT']} \
-            -r {config['ENC']['FPS']} -pixel_format yuv420p "
+            -r {config['ENC']['FPS']} -pixel_format {config['ENC']['PX_FMT']} "
     else:
         t = ""
-    enc = f"ffmpeg {t}-i {config['DIR']['REF_PATH'] + s} \
-        -c:v {s_cod['lib']} -crf {c} {s_cod['add_param']} {o} -hide_banner -loglevel error"
+    
+    enc = f"ffmpeg -ss {start_t} -to {end_t} {t}-i {source_path} -c:v {s_cod['lib']} \
+        -crf {c} {s_cod['add_param']} -pix_fmt yuv420p -an {o} -hide_banner -loglevel error"
     subprocess.call(enc, shell=True)
-    print("-encode: " + o)
     return o
 
-def assess(s,f):
+def assess(i,f):
     """
     Execute quality assessment and store the results into the log file
 
     Input:
-    - s : string
-        [ref] Source reference file
+    - i : int
+        [ref] Shot index
     - f : string
         [dist] Video to assess
     """
-    if s.endswith(".yuv") or s.endswith(".y4m"):
+    start_t = 0.0
+    end_t = float(shot_list[i].split("pts_time:",1)[1])
+    if i != 0:
+        start_t = float(shot_list[i-1].split("pts_time:",1)[1])
+     
+    if source_path.endswith(".yuv"):
         t = f"-f rawvideo -r {config['ENC']['FPS']} -video_size {config['ENC']['WIDTH']}x{config['ENC']['HEIGHT']} "
     else:
         t = ""
-    c_vmaf = f"ffmpeg {t}-i {config['DIR']['REF_PATH'] + s} -i {f} -hide_banner -loglevel error\
-            -lavfi \"[0:v]setpts=PTS-STARTPTS[ref];\
-                    [1:v]scale={config['ENC']['WIDTH']}x{config['ENC']['HEIGHT']}:flags=bicubic, setpts=PTS-STARTPTS[dist];\
-                    [dist][ref]libvmaf=feature=name=psnr:log_path=config/tmp_vmaf_log_{id_exe}.json:log_fmt=json\" \
-            -f null -"
+    c_vmaf = f"ffmpeg -ss {start_t} -to {end_t} -i {source_path} -i {f} \
+        -hide_banner -loglevel error\
+        -lavfi \"[0:v]setpts=PTS-STARTPTS[ref];\
+                 [1:v]setpts=PTS-STARTPTS[dist];\
+                 [dist][ref]libvmaf=feature=name=psnr:log_path=config/tmp_vmaf_log_{id_exe}.json:log_fmt=json\" \
+        -f null -"
     subprocess.call(c_vmaf, shell=True)
 
 def set_results(i,c,f):
@@ -74,9 +87,12 @@ def set_results(i,c,f):
     with open("config/tmp_vmaf_log_" + id_exe + ".json", 'r') as r: #extract quality and rate values
         i_data = json.load(r)
     data["shots"][i]["assessment"]["crf"][c] = c
+    if config['OPT']['DIST_METRIC'] == "vmaf":
+        data["shots"][i]["assessment"]["dist"][c] = i_data["pooled_metrics"]["vmaf"]["mean"]
+    elif config['OPT']['DIST_METRIC'] == "psnr":
+        data["shots"][i]["assessment"]["dist"][c] = (6*i_data["pooled_metrics"]["psnr_y"]["mean"] + \
+        i_data["pooled_metrics"]["psnr_cb"]["mean"] + i_data["pooled_metrics"]["psnr_cr"]["mean"])/8
     data["shots"][i]["assessment"]["dist"][c] = i_data["pooled_metrics"]["vmaf"]["mean"]
-    #data["shots"][i]["assessment"]["psnr"][c] = (6*i_data["pooled_metrics"]["psnr_y"]["mean"] + \
-        #i_data["pooled_metrics"]["psnr_cb"]["mean"] + i_data["pooled_metrics"]["psnr_cr"]["mean"])/8
     info = f"ffprobe -v error -select_streams v:0 -show_entries format:stream -print_format json {f}"
     cout = json.loads(subprocess.run(info.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout)
     data["shots"][i]["assessment"]["rate"][c] = int(cout["format"]["bit_rate"])

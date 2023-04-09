@@ -27,9 +27,9 @@ def eq_fit(x, a, b, c):
     """
     return a / (x + b) + c
 
-def expand(x,y,i,p):
+def pts_disp(x,y,i,p):
     """
-    np.flip(init_pts["rate"][shot_index]),i,par
+    Distribute points along the curve
 
     Input:
     - x : np.array(num_points)
@@ -90,20 +90,19 @@ def run(ti, tn, tv):
             "rate": np.zeros(global_.num_shots),
             "dist": np.zeros(global_.num_shots)} #info current optimal combination
     
-    shot_index = 0
-    for shot in sorted(os.listdir(config["DIR"]["REF_PATH"])): #for each shot
+    for shot_index in range(global_.num_shots): #for each shot
         for n_crf, val_crf in enumerate(global_.npts): #for each init crf
             if ti == 0 and config["DEBUG"]["ENC"]:
-                path = global_.encode(shot, shot_index, val_crf) #encoding
-                global_.assess(shot, path) #quality assessment
+                path = global_.encode(shot_index, val_crf) #encoding
+                global_.assess(shot_index, path) #quality assessment
                 global_.set_results(shot_index, int(val_crf), path)
             #store results in t_pts dictionary, weighted by duration
             init_pts["rate"][shot_index][n_crf] = global_.data["shots"][shot_index]["assessment"]["rate"][val_crf]
-            init_pts["dist"][shot_index][n_crf] = 100 - global_.data["shots"][shot_index]["assessment"]["dist"][val_crf]
+            init_pts["dist"][shot_index][n_crf] = global_.dist_max_val - global_.data["shots"][shot_index]["assessment"]["dist"][val_crf]
         par, cov = curve_fit(eq_fit, init_pts["rate"][shot_index], init_pts["dist"][shot_index],
                              bounds=((0,-np.inf,0),np.inf)) #fitting
         x = np.flip(init_pts["rate"][shot_index])
-        xnew = t_pts["rate"][shot_index] = np.append(np.concatenate([expand(x,init_pts["dist"][shot_index],i,par)
+        xnew = t_pts["rate"][shot_index] = np.append(np.concatenate([pts_disp(x,init_pts["dist"][shot_index],i,par)
                                     for i in range(config["ENC"]["NUM_PTS"]-1)]),x[-1]) \
                                     * global_.data["shots"][shot_index]["duration"] / global_.duration #estimate x
         y = init_pts["dist"][shot_index]
@@ -118,7 +117,6 @@ def run(ti, tn, tv):
                                                           t_pts["dist"][shot_index][n_crf],
                                                           t_pts["rate"][shot_index][n_crf-1],
                                                           t_pts["dist"][shot_index][n_crf-1])
-        shot_index += 1
     r_min = np.einsum('ij->j',t_pts["rate"])[0]
     r_max = np.einsum('ij->j',t_pts["rate"])[-1]
     d_min = np.einsum('ij->j',t_pts["dist"])[-1]

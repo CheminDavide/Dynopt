@@ -32,17 +32,16 @@ def run(ti, tn, tv):
             "rate": np.zeros((global_.num_shots, config["ENC"]["NUM_PTS"])),
             "dist": np.zeros((global_.num_shots, config["ENC"]["NUM_PTS"]))} #info encoded shots
     s_slopes = np.zeros((global_.num_shots, config["ENC"]["NUM_PTS"] - 1)) #single slopes
-    
-    shot_index = 0
-    for shot in sorted(os.listdir(config["DIR"]["REF_PATH"])): #for each shot
+
+    for shot_index in range(global_.num_shots): #for each shot
         for n_crf, val_crf in enumerate(t_pts["crf"]): #for each init crf
             if ti == 0 and config["DEBUG"]["ENC"]:
-                path = global_.encode(shot, shot_index, val_crf) #encoding
-                global_.assess(shot, path) #quality assessment
+                path = global_.encode(shot_index, val_crf) #encoding
+                global_.assess(shot_index, path) #quality assessment
                 global_.set_results(shot_index, int(val_crf), path)
             #store results in t_pts dictionary, weighted by duration
             r = global_.data["shots"][shot_index]["assessment"]["rate"][val_crf]
-            d = 100 - global_.data["shots"][shot_index]["assessment"]["dist"][val_crf]
+            d = global_.dist_max_val - global_.data["shots"][shot_index]["assessment"]["dist"][val_crf]
             t_pts["rate"][shot_index][n_crf] = r * global_.data["shots"][shot_index]["duration"] / global_.duration
             t_pts["dist"][shot_index][n_crf] = d * global_.data["shots"][shot_index]["duration"] / global_.duration
         for n_crf in range(1,config["ENC"]["NUM_PTS"]): #compute and store slope between all close points
@@ -50,7 +49,6 @@ def run(ti, tn, tv):
                                                           t_pts["dist"][shot_index][n_crf],
                                                           t_pts["rate"][shot_index][n_crf-1],
                                                           t_pts["dist"][shot_index][n_crf-1])
-        shot_index += 1
     
     r_min = np.einsum('ij->j',t_pts["rate"])[-1]
     r_max = np.einsum('ij->j',t_pts["rate"])[0]
@@ -59,7 +57,7 @@ def run(ti, tn, tv):
     t_ext["l"] = [r_min, d_max] #last elements, crfs 51
     t_ext["r"] = [r_max, d_min] #first elements, crfs 0
     t_ext["slope"] = global_.compute_slope(t_ext["l"][0],t_ext["l"][1],t_ext["r"][0],t_ext["r"][1])
-    
+
     if tn == "rate": #check target out of interval bounds
         if tv > r_max:
             return np.zeros(global_.num_shots, dtype=int) + config["ENC"]["CRF_RANGE"][0] #ex all 0
@@ -70,7 +68,7 @@ def run(ti, tn, tv):
             return np.zeros(global_.num_shots, dtype=int) + config["ENC"]["CRF_RANGE"][1] #ex all 51
         elif tv < d_min:
             return np.zeros(global_.num_shots, dtype=int) + config["ENC"]["CRF_RANGE"][0] #ex all 0
-        
+    
     #when new solution is the same as the past one
     while not all(curr_opt["r"] == prev_opt["r"]) or not all(curr_opt["l"] == prev_opt["l"]):
         prev_opt = curr_opt.copy() #keep track of the previous optimal combination
@@ -102,6 +100,7 @@ def run(ti, tn, tv):
         t_ext["slope"] = global_.compute_slope(t_ext["l"][0],t_ext["l"][1],t_ext["r"][0],t_ext["r"][1])
     
     if tn == "dist":
+        print(np.einsum('i->',s_pts[tn]))
         return curr_opt["r"]
     elif tn == "rate":
         return curr_opt["l"]

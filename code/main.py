@@ -34,16 +34,16 @@ with open("config/config.json", 'r') as f:
 #encoding paramethers
 PARAM_AVC = {"crfs": 52, "opr_range": [0,51], "lib": "libx264", "container": "mp4", "add_param": ""}
 PARAM_HEVC = {"crfs": 52, "opr_range": [0,51], "lib": "libx265", "container": "mp4", "add_param": "-x265-params log-level=none"}
-PARAM_VP9 = {"crfs": 64, "opr_range": [0,63], "lib": "libvpx-vp9", "container": "webm", "add_param": "-b:v 0"} 
+PARAM_VP9 = {"crfs": 64, "opr_range": [0,63], "lib": "libvpx-vp9", "container": "mp4", "add_param": "-b:v 0"}
+PARAM_AV1 = {"crfs": 64, "opr_range": [0,63], "lib": "libsvtav1", "container": "mp4", "add_param": ""}
 target_list = {"dist": config["OPT"]["DIST_TARGETS"], "rate": (np.array(config["OPT"]["RATE_TARGETS"])*1000).tolist()}
 
 #input file
 root = tk.Tk()
 root.withdraw()
-source_path = os.path.relpath(filedialog.askopenfilename())
-source_name = os.path.basename(source_path).split('.')[0]
+global_.source_path = os.path.relpath(filedialog.askopenfilename())
+source_name = os.path.basename(global_.source_path).split('.')[0]
 if config["DEBUG"]["ENC"]:
-    [os.remove(config["DIR"]["REF_PATH"] + f) for f in os.listdir(config["DIR"]["REF_PATH"])] #clean temp_refs folder
     [shutil.rmtree(config["DIR"]["DIST_PATH"] + f) for f in os.listdir(config["DIR"]["DIST_PATH"])] #clean temp_encoded folder
 
 #assessment files path
@@ -84,37 +84,26 @@ def shot_change_detection(p):
     - n : int
         Number of scenes
     """
-    print("-analyse: detecting shots...")
+    print("-analysis: detecting shots...")
     TIME_LOGS = "config/tmp_shot_dect_" + global_.id_exe + ".log"
     with open(TIME_LOGS, 'w') as f: #create times log file
         pass
     start_t = end_t = 0.0
-    #return when the shot changes
     det = f"ffmpeg -i {p} -hide_banner -loglevel error -filter_complex:v \
     \"select='gt(scene,{config['OPT']['SHOT_DETECT_TH']})',metadata=print:file={TIME_LOGS}\" -f null -"
     subprocess.call(det, shell=True)
     
     with open(TIME_LOGS, 'r') as r:
-        tm_log = r.read().splitlines()[::2]
-    tm_log.append("end pts_time:" + str(global_.duration))
-    for i,l in enumerate(tm_log): #for each cut
+        global_.shot_list = r.read().splitlines()[::2]
+    global_.shot_list.append("end pts_time:" + str(global_.duration))
+    
+    for shot in range(len(global_.shot_list)): #for each cut
         #create a folder for each scene
-        new_dir = str(i)
+        new_dir = str(shot)
         new_path = os.path.join(config["DIR"]["DIST_PATH"], new_dir)
         os.mkdir(new_path)
-        
-        #cut the video
-        end_t = l.split("pts_time:",1)[1]
-        if p.endswith(".yuv") or p.endswith(".y4m"):
-            cut = f"ffmpeg -ss {start_t} -to {end_t} -i {p} -hide_banner -loglevel error\
-            -pix_fmt yuv420p {config['DIR']['REF_PATH']}scene{str(i).zfill(7)}.yuv"
-        else:
-            cut = f"ffmpeg -ss {start_t} -to {end_t} -i {p} -hide_banner -loglevel error\
-            -c copy -copyts {config['DIR']['REF_PATH']}scene{str(i).zfill(7)+p[-4:]}"
-        subprocess.call(cut, shell=True)
-        start_t = end_t
-    print("-analyse: " + str(i+1) + " detected shots")
-    return i+1
+    print("-analysis: " + str(len(global_.shot_list)) + " detected shots")
+    return len(global_.shot_list)
 
 def save_opt(i, t, opt):
     """
@@ -162,8 +151,7 @@ def mux(t_i, t_n, t_v):
     """
     if t_n == "dist":
         t_n = config["OPT"]["DIST_METRIC"]
-        if config["OPT"]["DIST_METRIC"] == "vmaf":
-            out_name = str(100 - t_v).zfill(len(str(target_list[t_name][-1])))
+        out_name = str(global_.dist_max_val - t_v).zfill(len(str(target_list[t_name][-1])))
     elif t_n == "rate":
         out_name = str(int(t_v / 1000)).zfill(len(str(target_list[t_name][-1])) - 3)
     
@@ -191,9 +179,9 @@ def mux(t_i, t_n, t_v):
 #init folders and files check
 #if not os.path.isfile(rd_file):
 
-if source_path.endswith(".yuv"):
+if global_.source_path.endswith(".yuv"):
     print("-input: yuv")
-elif source_path.endswith(".y4m"):
+elif global_.source_path.endswith(".y4m"):
     print("-input: y4m")
 else:
     print("-input: not rawvideo")
@@ -208,13 +196,16 @@ elif config["ENC"]["CODEC"] == "hevc":
 elif config["ENC"]["CODEC"] == "vp9":
     global_.s_cod = PARAM_VP9
     init_res_matrix(PARAM_VP9["crfs"])
+elif config["ENC"]["CODEC"] == "av1":
+    global_.s_cod = PARAM_AV1
+    init_res_matrix(PARAM_AV1["crfs"])
 else:
-    print("ERROR: not a codec")
+    print("ERROR: " + config["ENC"]["CODEC"] + " is not a codec")
     sys.exit()
 
 #init checks
 if config["ENC"]["NUM_PTS"] > config["ENC"]["CRF_RANGE"][1] - config["ENC"]["CRF_RANGE"][0] + 1:
-    print("ERROR: too many encodings")
+    print("ERROR: too many points to encode in the interval " + str(config["ENC"]["CRF_RANGE"]))
     sys.exit()
 if config["ENC"]["CRF_RANGE"][0] > config["ENC"]["CRF_RANGE"][1]:
     print("ERROR: wrong CRF range")
@@ -223,10 +214,17 @@ if config["ENC"]["CRF_RANGE"][0] < global_.s_cod["opr_range"][0] or \
    config["ENC"]["CRF_RANGE"][1] > global_.s_cod["opr_range"][1]:
     print("ERROR: CRF out of range")
     sys.exit()
+if config["OPT"]["OPT_METHOD"] == "cf" and \
+    (config["ENC"]["CRF_RANGE"][1] - config["ENC"]["CRF_RANGE"][0])/config["ENC"]["NUM_PTS"] < 5:
+    print("ERROR: too many CRF points, reduce them or expand the range")
+    sys.exit()
+if config["OPT"]["OPT_METHOD"] == "cf" and config["ENC"]["NUM_PTS"] < 3:
+    print("ERROR: not enough CRF points, increase their number")
+    sys.exit()
     
 #get the total duration for the last cut
 idu = f"ffprobe -v error -select_streams v:0 -show_entries format:stream \
-    -print_format json {source_path} -hide_banner -loglevel error"
+    -print_format json {global_.source_path} -hide_banner -loglevel error"
 dta = json.loads(subprocess.run(idu.split(), stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout)
 global_.duration = float(dta['format']['duration'])
 
@@ -246,7 +244,7 @@ if config["DEBUG"]["ENC"]:
     global_.data["fps"] = config["ENC"]["FPS"]
     global_.data["shots"][0]["assessment"] = str_matrix
     
-    global_.num_shots = shot_change_detection(source_path)
+    global_.num_shots = shot_change_detection(global_.source_path)
 
     #add emplty target points
     base_point = global_.data["shots"][0]["opt_points"][0]
@@ -256,44 +254,46 @@ if config["DEBUG"]["ENC"]:
             base_point["target"] = t_val
             struct_points.append(copy.deepcopy(base_point))
     global_.data["shots"][0]["opt_points"] = struct_points
-
+    
     #add empty shots
     base_shot = global_.data["shots"][0]
     for i in range(0, global_.num_shots):
         base_shot["index"] = i #assign index to shots in json file
         struct_shots.append(copy.deepcopy(base_shot))
     global_.data["shots"] = struct_shots
-
+    
     with open(rd_file, 'w') as w:
         json.dump(global_.data, w, separators=(',',': '))
 else:
     with open(rd_file, 'r') as f:
         global_.data = json.load(f)
     global_.num_shots = len(global_.data["shots"])
-    
+
 if config["OPT"]["DIST_METRIC"] == "vmaf":
-    target_list["dist"] = 100 - np.asarray(target_list["dist"])
+    global_.dist_max_val = 100
 elif config["OPT"]["DIST_METRIC"] == "psnr":
-    print("not yet implemented")
-    #TODO normalize psnr and set a max
-    sys.exit()
+    global_.dist_max_val = 60
 else:
-    print("ERROR: not a target")
+    print("ERROR: not supported quality metric")
     sys.exit()
-    
+target_list["dist"] = global_.dist_max_val - np.asarray(target_list["dist"])
+
 print("-init: done")
 
 # -----------------------------------------------------------------------------
 #                              Exe
 # -----------------------------------------------------------------------------
 
+pr = np.zeros(len(target_list["rate"])+len(target_list["dist"]))
+pd = np.zeros(len(target_list["rate"])+len(target_list["dist"]))
+    
 target_index = 0
 for t_name in target_list:
     for t_val in target_list[t_name]:
         
         global_.npts = interval(config["ENC"]["CRF_RANGE"], config["ENC"]["NUM_PTS"]).tolist()
         
-        if config["OPT"]["OPT_METHOD"] == "fx": #brute force approach
+        if config["OPT"]["OPT_METHOD"] == "fx": #fixed CRF
             opt = fx.run(target_index, t_name, t_val)
             print("-out: crfs " + str(opt))
             
@@ -313,22 +313,38 @@ for t_name in target_list:
                 global_.s_cod["add_param"] = global_.s_cod["add_param"] + " -n"
                 print("-encode: encoding in-between points...")
                 shot_index = 0
-                for shot in sorted(os.listdir(config["DIR"]["REF_PATH"])): #for each shot
-                    out = global_.encode(shot, shot_index, opt[shot_index]) #encoding
+                for shot in range(global_.num_shots): #for each shot
+                    out = global_.encode(shot_index, opt[shot_index]) #encoding
+                    global_.assess(shot_index,out)
+                    global_.set_results(shot_index,int(opt[shot_index]),out)
                     shot_index += 1
                 
         else:
             print("ERROR: not an opt method")
             sys.exit()
-
+        
+        for i in range(0,global_.num_shots): #save the opt crf for each shot
+            save_opt(i, target_index, opt[i])
+                
+        r = np.zeros(global_.num_shots)
+        d = np.zeros(global_.num_shots)
+        for shot_index in range(global_.num_shots): #for each shot
+            r[shot_index] = global_.data["shots"][shot_index]["assessment"]["rate"][int(opt[shot_index])] \
+                * global_.data["shots"][shot_index]["duration"] / global_.duration
+            d[shot_index] = global_.data["shots"][shot_index]["assessment"]["dist"][int(opt[shot_index])] \
+                * global_.data["shots"][shot_index]["duration"] / global_.duration
+        pr[target_index] = np.einsum('i->',r)
+        pd[target_index] = np.einsum('i->',d)
+        
         if config["DEBUG"]["MUX"]:
-            for i in range(0,global_.num_shots): #save the opt crf for each shot
-                save_opt(i, target_index, opt[i])
             mux(target_index, t_name, t_val)
         
         target_index += 1
+
+print("r:"+str(pr)+" d:"+str(pd))
 
 if config["DEBUG"]["DEL"]: #delete temp files
     os.remove("config/tmp_shot_dect_" + global_.id_exe + ".log")
     os.remove("config/tmp_vmaf_log_" + global_.id_exe + ".json")
     os.remove("config/tmp_shot_list_" + global_.id_exe + ".txt")
+    [shutil.rmtree(config["DIR"]["DIST_PATH"] + f) for f in os.listdir(config["DIR"]["DIST_PATH"])] #clean temp_encoded folder

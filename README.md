@@ -38,28 +38,28 @@ source env/bin/activate
 * Encoding variables:
     * `"CODEC" [string]` : output codec
         - values: "avc", "hevc", "vp9", !!not implemented: "av1", "vvc"
-    * `"WIDTH" [int]` : input and output width
-        - ex.1920
-    * `"HEIGHT" [int]` : input and output height
-        - ex.1080
-    * `"FPS" [float]` : input and output frame rate
-        - ex.29.97
+    * `"WIDTH" [int]` : input and output width (only for .yuv input)
+        - ex. 1920
+    * `"HEIGHT" [int]` : input and output height (only for .yuv input)
+        - ex. 1080
+    * `"FPS" [float]` : input and output frame rate (only for .yuv input)
+        - ex. 29.97
     * `"CRF_RANGE" [list(2)]` : CRF encoding range
-        - ex.[10,40]
+        - ex. [10,40]
     * `"NUM_PTS" [int]` : number of encodings or points per shot, more for more precision
-        - ex.10 in the interval [10,40]
+        - ex. 10 in the interval [10,40]
 
 * Optimization and target settings:
     * `"DIST_TARGETS [list(N)]"` : list of quality targets
-        - ex.[75,90] - a value between 0 and 100 in case of VMAF, also empty
+        - ex. [75,90] - a value between 0 and 100 in case of VMAF, also empty
     * `"RATE_TARGETS" [list(N)]` : list of bitrate targets
-        - ex.[5000000] - also empty
+        - ex. [5000000] - also empty
     * `"DIST_METRIC" [string]` : quality metric
-        - values "vmaf" !!not implemented: "psnr","ssim", "mssim"
+        - values: "vmaf" !!not implemented: "psnr","ssim", "mssim"
     * `"OPT_METHOD" [string]` : optimization method
         - values: fx = fixed CRF, bf = brute force, lg = lagrange, cf = curve fitting
     * `"SHOT_DETECT_TH" [float]` : shot detection threshold
-        - ex.0.25
+        - ex. 0.25
         
 * Directories and files paths.
 
@@ -68,6 +68,8 @@ source env/bin/activate
         - False when you have all the shots already encoded and assessed
     * `"MUX" [boolean]` : do not create the final optimized version
         - False when no video output is needed
+    * `"DEL" [boolean]` : delete temporary files after execution
+        - False when you want to keep shot detection and vmaf information
 
 #### 2. Run the main script:
 ```bash
@@ -97,10 +99,10 @@ ____ main.py
 
 __config/
 ____ config.json #config file
-____ shot_detection.log #timestamps of the shots in the scene
-____ shot_list.txt #file list of encoded shots to merge
 ____ template.json #RD results structure
-____ vmaf_logs.json #VMAF library results
+____ tmp_shot_dect.log #timestamps of the shots in the scene
+____ tmp_shot_list.txt #file list of encoded shots to merge
+____ tmp_vmaf_log.json #VMAF library results
 
 __env/ #virtual environment with required modules
 

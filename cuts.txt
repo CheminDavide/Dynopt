@@ -1,0 +1,2 @@
+file '/home/ubuntu/video_dynopt/tests_vids/srcRAW_4K/Netflix_BarScene_4096x2160_60fps_10bit_420.y4m'
+file '/home/ubuntu/video_dynopt/tests_vids/srcRAW_4K/Netflix_DinnerScene_4096x2160_60fps_10bit_420.y4m'

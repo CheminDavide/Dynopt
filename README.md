@@ -34,56 +34,56 @@ python3 code/main.py <custom_parameters>
 
 * Mandatory:
     * `-i [string]` : input file path, absolute or relative
-        - ex. test_vids/test.y4m or /home/ubuntu/dynopt/test_vids/test.y4m
+        *- ex. test_vids/test.y4m or /home/ubuntu/dynopt/test_vids/test.y4m*
     * `-d [list(N)]` : list of quality targets, not mandatory or empty if at least one bitrate target is specified
-        - ex. [40,50,60,75,80,85,90,93,96] - a value between 0 and 100 in case of VMAF
-        - ex. [30] - a value between 0 and 60 in case of PSNR
+        *- ex. [40,50,60,75,80,85,90,93,96] - a value between 0 and 100 in case of VMAF*
+        *- ex. [30] - a value between 0 and 60 in case of PSNR*
     * `-r [list(N)]` : list of bitrate targets in kbps, not mandatory or empty if at least one quality target is specified
-        - ex. [100,250,500,1000]
+        *- ex. [100,250,500,1000]*
     * `-c [float]` : output codec, it also depends on the FFmpeg intallation
-        - values: avc, hevc, vp9, av1
+        *- values: avc, hevc, vp9, av1*
 
 * Optional:
     * `-o [string]` : output folder, absolute or relative
-        - ex. opt_vids/ or /home/ubuntu/dynopt/opt_vids/
-        - if not specified, the system will print RD results in the console instead of muxing the final file
+        *- ex. opt_vids/ or /home/ubuntu/dynopt/opt_vids/*
+        *- if not specified, the system will print RD results in the console instead of muxing the final file*
     * `-m` : optimization method
-        - values: fx, bf, lg, cf
-        - DEFAULT: lg
+        *- values: fx, bf, lg, cf*
+        *- DEFAULT: lg*
     * `--range [list(2)]"` : CRF encoding range
-        - ex. [10,40] or [15,35]
-        - DEFAULT: range of CRF values supported by the encoder, excluding the lossless option
+        *- ex. [10,40] or [15,35]*
+        *- DEFAULT: range of CRF values supported by the encoder, excluding the lossless option*
     * `--pts [int]` : number of encodings or points per shot, more for more precision
-        - ex. 10
-        - DEFAULT: all possible points in the specified range
+        *- ex. 10*
+        *- DEFAULT: all possible points in the specified range*
     * `--dmetric [string]` : quality metric used for optimization
-        - values: vmaf, psnr
-        - DEFAULT: vmaf
+        *- values: vmaf, psnr*
+        *- DEFAULT: vmaf*
     * `--dth [float]` : shot detection threshold
-        - values: a value in between 0 and 1
-        - DEFAULT: 0.25
+        *- values: a value in between 0 and 1*
+        *- DEFAULT: 0.25*
     * `-h or --help` : get help
         
 * Mandatory only for .yuv input:
     * `--ires [int]x[int]` : input and output height
-        - ex. 1920x1080
+        *- ex. 1920x1080*
     * `--ifps [float]` : input and output frame rate
-        - ex. 29.97
+        *- ex. 29.97*
     * `--ipx_fmt [string]` : pixel format
-        - ex. yuv420p
+        *- ex. yuv420p*
 
 * Debug parameters:
     * `--skip` : do not encode shots, proceed only with computations
-        - Use this when you already have RD results stored in a JSON file
+        *- Use this when you already have RD results stored in a JSON file*
     * `--keep` : do not delete elemental encodes and temporary files in the temp folder when code has finished running
-        - Use this when you still need encoded shots after execution
+        *- Use this when you still need encoded shots after execution*
 
 * Directories:
     To change folder pathes please modify the values in [main.py](code/main.py). Your can change directories for the following folders:
     * `p_elemental_encodes` : encoded shots folder
-        - In this folder the same number of folders as the number of shots will be created. Inside each one you will find a number of elemental encodes per shot as specified in `--pts` parameter.
+        *- In this folder the same number of folders as the number of shots will be created. Inside each one you will find a number of elemental encodes per shot as specified in `--pts` parameter.*
     * `p_rd_log` : optional JSON output folder with RD results
-        - You can store RD results in a JSON file in order to avoid to encode again all shots in the next execution, when inputting the same sequence, and for debugging purposes.
+        *- You can store RD results in a JSON file in order to avoid to encode again all shots in the next execution, when inputting the same sequence, and for debugging purposes.*
 
 
 #### Examples

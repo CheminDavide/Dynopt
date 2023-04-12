@@ -8,10 +8,10 @@ shot_list = [] #shot time bounds
 num_shots = 0 #number of shots, from shot detection method
 duration = 0.0 #sequence duration
 npts = [] #crf values to encode, from interval method
-id_exe = str(random.randint(100000,999999)) #execution unique id
 s_cod = {} #coding parameters selection
 data = {} #RD values and info from json results file
 dist_max_val = 0 #maximum value of the quality metric
+config = {} #coding parameters selection
 
 def encode(i,c):
     """
@@ -33,7 +33,7 @@ def encode(i,c):
     
     o = config["DIR"]["DIST_PATH"] + str(i) + "/" + str(c) + "_" \
         + config["ENC"]["CODEC"].upper() + "." + s_cod["container"]
-    print("-encoding: " + o)
+    print("-encoding: " + o, end='\r')
     if source_path.endswith(".yuv"):
         t = f"-f rawvideo -video_size {config['ENC']['WIDTH']}x{config['ENC']['HEIGHT']} \
             -r {config['ENC']['FPS']} -pixel_format {config['ENC']['PX_FMT']} "
@@ -68,7 +68,7 @@ def assess(i,f):
         -hide_banner -loglevel error\
         -lavfi \"[0:v]setpts=PTS-STARTPTS[ref];\
                  [1:v]setpts=PTS-STARTPTS[dist];\
-                 [dist][ref]libvmaf=feature=name=psnr:log_path=config/tmp_vmaf_log_{id_exe}.json:log_fmt=json\" \
+                 [dist][ref]libvmaf=feature=name=psnr:log_path=config/tmp_vmaf_log.json:log_fmt=json\" \
         -f null -"
     subprocess.call(c_vmaf, shell=True)
 
@@ -84,7 +84,7 @@ def set_results(i,c,f):
     - f : string
         Evaluated file
     """
-    with open("config/tmp_vmaf_log_" + id_exe + ".json", 'r') as r: #extract quality and rate values
+    with open("config/tmp_vmaf_log.json", 'r') as r: #extract quality and rate values
         i_data = json.load(r)
     data["shots"][i]["assessment"]["crf"][c] = c
     if config['OPT']['DIST_METRIC'] == "vmaf":
@@ -152,9 +152,3 @@ def check_side(i,pts,m,s):
                 m = n
                 count += 1
     return m
-
-
-#get custom variables from config.json
-with open("config/config.json", 'r') as f:
-    config = json.load(f)
-

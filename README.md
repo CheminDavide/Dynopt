@@ -1,6 +1,6 @@
 # video_dynopt_thesis
 
-Dynamic vido optimization based on Quality and Rate targets.
+Dynamic video optimization based on quality and rate targets.
 
 ## Installation
 
@@ -8,12 +8,6 @@ Use the package manager [pip](https://pip.pypa.io/en/stable/) to install require
 Run the following code in the root of your working directory:
 
 ```bash
-#install virtual environment
-python3 -m venv env
-
-#activate the environment
-source env/bin/activate
-
 #install required modules
 python3 -m pip install -r requirements.txt
 ```
@@ -25,88 +19,106 @@ Your system must have installed also:
     - libvpx VP9 video encoder
     - libvmaf VMAF library
 
-Before executing the code always remember to run it inside of the installed virtual environment.
-```bash
-#when the environment is installed but not active
-source env/bin/activate
-```
 
 ## Usage
 
-#### 1. Before running the code, configure settings in [config.json](config/config.json)
 
-* Encoding variables:
-    * `"CODEC" [string]` : output codec
-        - values: "avc", "hevc", "vp9", !!not implemented: "av1", "vvc"
-    * `"WIDTH" [int]` : input and output width (only for .yuv input)
-        - ex. 1920
-    * `"HEIGHT" [int]` : input and output height (only for .yuv input)
-        - ex. 1080
-    * `"FPS" [float]` : input and output frame rate (only for .yuv input)
-        - ex. 29.97
-    * `"CRF_RANGE" [list(2)]` : CRF encoding range
-        - ex. [10,40]
-    * `"NUM_PTS" [int]` : number of encodings or points per shot, more for more precision
-        - ex. 10 in the interval [10,40]
+#### Run [main.py](code/main.py) script
 
-* Optimization and target settings:
-    * `"DIST_TARGETS [list(N)]"` : list of quality targets
-        - ex. [75,90] - a value between 0 and 100 in case of VMAF, also empty
-    * `"RATE_TARGETS" [list(N)]` : list of bitrate targets
-        - ex. [5000000] - also empty
-    * `"DIST_METRIC" [string]` : quality metric
-        - values: "vmaf" !!not implemented: "psnr","ssim", "mssim"
-    * `"OPT_METHOD" [string]` : optimization method
-        - values: fx = fixed CRF, bf = brute force, lg = lagrange, cf = curve fitting
-    * `"SHOT_DETECT_TH" [float]` : shot detection threshold
-        - ex. 0.25
-        
-* Directories and files paths.
-
-* Debug settings:
-    * `"ENC" [boolean]` : do not encode shots, proceed only with computations
-        - False when you have all the shots already encoded and assessed
-    * `"MUX" [boolean]` : do not create the final optimized version
-        - False when no video output is needed
-    * `"DEL" [boolean]` : delete temporary files after execution
-        - False when you want to keep shot detection and vmaf information
-
-#### 2. Run the main script:
 ```bash
-python3 code/main.py
+python3 code/main.py <custom_parameters>
 ```
 
-#### 3. Select from the dialogue box the video to input.
-Supported formats:
-* `.yuv`: raw video
-* `.y4m`: raw video
 
-The support of any other input format and codec, like `.mp4` or `AVC`, depends on ffmpeg installation.
+#### Custom parameters
 
-#### 4. Output
-Results will be displayed in the console.
-Optimal encoded videos are stored in the specified folder.
+* Mandatory:
+    * `-i [string]` : input file path, absolute or relative
+        - ex. test_vids/test.y4m or /home/ubuntu/dynopt/test_vids/test.y4m
+    * `-d [list(N)]` : list of quality targets, not mandatory or empty if at least one bitrate target is specified
+        - ex. [40,50,60,75,80,85,90,93,96] - a value between 0 and 100 in case of VMAF
+        - ex. [30] - a value between 0 and 60 in case of PSNR
+    * `-r [list(N)]` : list of bitrate targets in kbps, not mandatory or empty if at least one quality target is specified
+        - ex. [100,250,500,1000]
+    * `-c [float]` : output codec, it also depends on the FFmpeg intallation
+        - values: avc, hevc, vp9, av1
+
+* Optional:
+    * `-o [string]` : output folder, absolute or relative
+        - ex. opt_vids/ or /home/ubuntu/dynopt/opt_vids/
+        - if not specified, the system will print RD results in the console instead of muxing the final file
+    * `-m` : optimization method
+        - values: fx, bf, lg, cf
+        - DEFAULT: lg
+    * `--range [list(2)]"` : CRF encoding range
+        - ex. [10,40] or [15,35]
+        - DEFAULT: range of CRF values supported by the encoder, excluding the lossless option
+    * `--pts [int]` : number of encodings or points per shot, more for more precision
+        - ex. 10
+        - DEFAULT: all possible points in the specified range
+    * `--dmetric [string]` : quality metric used for optimization
+        - values: vmaf, psnr
+        - DEFAULT: vmaf
+    * `--dth [float]` : shot detection threshold
+        - values: a value in between 0 and 1
+        - DEFAULT: 0.25
+    * `-h or --help` : get help
+        
+* Mandatory only for .yuv input:
+    * `--ires [int]x[int]` : input and output height
+        - ex. 1920x1080
+    * `--ifps [float]` : input and output frame rate
+        - ex. 29.97
+    * `--ipx_fmt [string]` : pixel format
+        - ex. yuv420p
+
+* Debug parameters:
+    * `--skip` : do not encode shots, proceed only with computations
+        - Use this when you already have RD results stored in a JSON file
+    * `--keep` : do not delete elemental encodes and temporary files in the temp folder when code has finished running
+        - Use this when you still need encoded shots after execution
+
+* Directories:
+    To change folder pathes please modify the values in [main.py](code/main.py). Your can change directories for the following folders:
+    * `p_elemental_encodes` : encoded shots folder
+        - In this folder the same number of folders as the number of shots will be created. Inside each one you will find a number of elemental encodes per shot as specified in `--pts` parameter.
+    * `p_rd_log` : optional JSON output folder with RD results
+        - You can store RD results in a JSON file in order to avoid to encode again all shots in the next execution, when inputting the same sequence, and for debugging purposes.
+
+
+#### Examples
+Input .yuv test sequence, optimized with Curve Fitting method in the AV1 range [25,55] at 5 CRF points per shot, only with quality targets.
+```bash
+python3 code/main.py -i test.yuv --ires 1920x1080 --ifps 25 --px_fmt yuv420p -d [40,50,60,70,80,85,90,95] -c av1 --range [25,55] --pts 5 -m cf -o test/optimized/
+```
+
+Input .y4m test sequence, optimized with Lagrangian method in the whole range of AVC at 26 points with both rate and quality targets measured with PSNR.
+```bash
+python3 code/main.py -i test.y4m -r [500,1000,1500,2000] -d [28,30,32,34] --dmetric psnr -c avc --pts 26 -m lg -o test/optimized/
+```
+
+Input .y4m test sequence already optimized in a previous execution, without generating any output file besides the RD results printed in the console.
+```bash
+python3 code/main.py -i test.y4m -r [1000,2000,3000,5000] -d [60] -c avc --pts 26 -m lg --skip
+```
+**Remember.** If you want to run optimization without re-encoding, you first have to run the scrit with `--keep` and set a folder in the `p_rd_log` variable. Then, you can run the next script with `--skip --keep` as much as you like.
+
+
 
 ## Directory tree
 ```bash
 __code/
-____ bf.py #brute force code
-____ cf.py #curve fitting implementation
-____ fx.py #brute force code
+____ bf.py #brute force script
+____ cf.py #curve fitting script
+____ fx.py #brute force script
 ____ global_.py #global variables and methods
-____ lg.py #lagrange method
+____ lg.py #lagrangian method script
 ____ main.py
 
-__config/
-____ config.json #config file
-____ template.json #RD results structure
+__config/ #temporary files
 ____ tmp_shot_dect.log #timestamps of the shots in the scene
 ____ tmp_shot_list.txt #file list of encoded shots to merge
 ____ tmp_vmaf_log.json #VMAF library results
 
 __env/ #virtual environment with required modules
-
-__tests_rd/ #plots and json files to store CRF, distortion and rate values for later uses
-
-__tests_vids/ #raw input files, temporary encoded shots, optimized output videos
 ```

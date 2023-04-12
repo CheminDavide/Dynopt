@@ -26,7 +26,7 @@ Your system must have installed also:
 #### Run [main.py](code/main.py) script
 
 ```bash
-python3 code/main.py <custom_parameters>
+python3 main.py <custom_parameters>
 ```
 
 
@@ -89,17 +89,17 @@ python3 code/main.py <custom_parameters>
 #### Examples
 Input .yuv test sequence, optimized with Curve Fitting method in the AV1 range [25,55] at 5 CRF points per shot, only with quality targets.
 ```bash
-python3 code/main.py -i test.yuv --ires 1920x1080 --ifps 25 --px_fmt yuv420p -d [40,50,60,70,80,85,90,95] -c av1 --range [25,55] --pts 5 -m cf -o test/optimized/
+python3 main.py -i test.yuv --ires 1920x1080 --ifps 25 --px_fmt yuv420p -d [40,50,60,70,80,85,90,95] -c av1 --range [25,55] --pts 5 -m cf -o test/optimized/
 ```
 
 Input .y4m test sequence, optimized with Lagrangian method in the whole range of AVC at 26 points with both rate and quality targets measured with PSNR.
 ```bash
-python3 code/main.py -i test.y4m -r [500,1000,1500,2000] -d [28,30,32,34] --dmetric psnr -c avc --pts 26 -m lg -o test/optimized/
+python3 main.py -i test.y4m -r [500,1000,1500,2000] -d [28,30,32,34] --dmetric psnr -c avc --pts 26 -m lg -o test/optimized/
 ```
 
 Input .y4m test sequence already optimized in a previous execution, without generating any output file besides the RD results printed in the console.
 ```bash
-python3 code/main.py -i test.y4m -r [1000,2000,3000,5000] -d [60] -c avc --pts 26 -m lg --skip
+python3 main.py -i test.y4m -r [1000,2000,3000,5000] -d [60] -c avc --pts 26 -m lg --skip
 ```
 **Remember.** If you want to run optimization without re-encoding, you first have to run the scrit with `--keep` and set a folder in the `p_rd_log` variable. Then, you can run the next script with `--skip --keep` as much as you like.
 

@@ -1,4 +1,4 @@
-# video_dynopt_thesis
+# Dynopt
 
 Dynamic video optimization based on quality and rate targets.
 
